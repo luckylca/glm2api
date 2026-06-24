@@ -1,0 +1,29 @@
+services:
+  glm2api:
+    build: .
+    image: glm2api:latest
+    container_name: glm2api
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3099}:3099"
+    environment:
+      - DS_TOKENS=${DS_TOKENS:-}
+      - DS_ACCOUNTS=${DS_ACCOUNTS:-}
+      - API_KEY=${API_KEY:-}
+      - PORT=3099
+      - MAX_CONCURRENT_PER_TOKEN=${MAX_CONCURRENT_PER_TOKEN:-2}
+      - TOKEN_DEAD_THRESHOLD=${TOKEN_DEAD_THRESHOLD:-5}
+      - HEALTH_CHECK_INTERVAL=${HEALTH_CHECK_INTERVAL:-600}
+      - IDLE_THRESHOLD=${IDLE_THRESHOLD:-1800}
+      - SESSION_TTL=${SESSION_TTL:-1800}
+      - MAX_REQUESTS_PER_SESSION=${MAX_REQUESTS_PER_SESSION:-8}
+      - MERGE_THINKING=${MERGE_THINKING:-false}
+      - HTTPS_PROXY=${HTTPS_PROXY:-}
+      - HTTP_PROXY=${HTTP_PROXY:-}
+      - LOG_DIR=/var/log/glm2api
+    volumes:
+      - glm2api-logs:/var/log/glm2api
+      - ./.env.docker:/app/.env:ro
+
+volumes:
+  glm2api-logs:

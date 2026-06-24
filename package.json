@@ -1,0 +1,17 @@
+{
+  "name": "glm2api",
+  "version": "1.0.0",
+  "description": "GLM Web Chat to API proxy (OpenAI + GLM native format)",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.0",
+    "express": "^4.21.0",
+    "ssh2": "^1.17.0",
+    "undici": "^6.21.2"
+  }
+}

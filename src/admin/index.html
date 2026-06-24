@@ -1,0 +1,2151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GLM-2API — 管理面板</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/atom-one-dark.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<style>
+/* ── MD3 Design Tokens (Dark Theme) ─────────────────────────────────── */
+:root {
+  --md-sys-color-primary: #D0BCFF;
+  --md-sys-color-on-primary: #381E72;
+  --md-sys-color-primary-container: #4F378B;
+  --md-sys-color-on-primary-container: #EADDFF;
+  --md-sys-color-secondary: #CCC2DC;
+  --md-sys-color-on-secondary: #332D41;
+  --md-sys-color-secondary-container: #4A4458;
+  --md-sys-color-on-secondary-container: #E8DEF8;
+  --md-sys-color-tertiary: #EFB8C8;
+  --md-sys-color-on-tertiary: #492532;
+  --md-sys-color-tertiary-container: #633B48;
+  --md-sys-color-on-tertiary-container: #FFD8E4;
+  --md-sys-color-error: #F2B8B5;
+  --md-sys-color-on-error: #601410;
+  --md-sys-color-error-container: #8C1D18;
+  --md-sys-color-on-error-container: #F9DEDC;
+  --md-sys-color-success: #A8DAB5;
+  --md-sys-color-on-success: #0A3818;
+  --md-sys-color-success-container: #216A3B;
+  --md-sys-color-warning: #F7D48B;
+  --md-sys-color-on-warning: #3F2A00;
+  --md-sys-color-surface: #1C1B1F;
+  --md-sys-color-surface-dim: #141318;
+  --md-sys-color-surface-bright: #38363C;
+  --md-sys-color-surface-container-lowest: #0F0D13;
+  --md-sys-color-surface-container-low: #1D1B22;
+  --md-sys-color-surface-container: #211F26;
+  --md-sys-color-surface-container-high: #2B2930;
+  --md-sys-color-surface-container-highest: #36343B;
+  --md-sys-color-on-surface: #E6E1E5;
+  --md-sys-color-on-surface-variant: #CAC4D0;
+  --md-sys-color-outline: #938F99;
+  --md-sys-color-outline-variant: #49454F;
+  --md-sys-color-inverse-surface: #E6E1E5;
+  --md-sys-color-inverse-on-surface: #313033;
+  --md-sys-color-scrim: #000000;
+  --md-sys-color-shadow: #000000;
+  --md-sys-elevation-1: 0 1px 2px 0 rgba(0,0,0,0.3), 0 1px 3px 1px rgba(0,0,0,0.15);
+  --md-sys-elevation-2: 0 1px 2px 0 rgba(0,0,0,0.3), 0 2px 6px 2px rgba(0,0,0,0.15);
+  --md-sys-elevation-3: 0 1px 3px 0 rgba(0,0,0,0.3), 0 4px 8px 3px rgba(0,0,0,0.15);
+  --md-sys-elevation-4: 0 2px 3px 0 rgba(0,0,0,0.3), 0 6px 10px 4px rgba(0,0,0,0.15);
+  --md-sys-elevation-5: 0 4px 4px 0 rgba(0,0,0,0.3), 0 8px 12px 6px rgba(0,0,0,0.15);
+  --md-sys-shape-corner-xs: 4px;
+  --md-sys-shape-corner-s: 8px;
+  --md-sys-shape-corner-m: 12px;
+  --md-sys-shape-corner-l: 16px;
+  --md-sys-shape-corner-xl: 28px;
+  --md-sys-shape-corner-full: 9999px;
+  --md-sys-typescale-display-large: 400 57px/64px Roboto;
+  --md-sys-typescale-headline-large: 400 32px/40px Roboto;
+  --md-sys-typescale-headline-medium: 400 28px/36px Roboto;
+  --md-sys-typescale-headline-small: 400 24px/32px Roboto;
+  --md-sys-typescale-title-large: 400 22px/28px Roboto;
+  --md-sys-typescale-title-medium: 500 16px/24px Roboto;
+  --md-sys-typescale-title-small: 500 14px/20px Roboto;
+  --md-sys-typescale-label-large: 500 14px/20px Roboto;
+  --md-sys-typescale-label-medium: 500 12px/16px Roboto;
+  --md-sys-typescale-label-small: 500 11px/16px Roboto;
+  --md-sys-typescale-body-large: 400 16px/24px Roboto;
+  --md-sys-typescale-body-medium: 400 14px/20px Roboto;
+  --md-sys-typescale-body-small: 400 12px/16px Roboto;
+}
+
+/* ── Reset & Base ────────────────────────────────────────────────────── */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; }
+body {
+  font-family: Roboto, 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+  font: var(--md-sys-typescale-body-medium);
+  background: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+  -webkit-font-smoothing: antialiased;
+}
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  vertical-align: middle;
+  font-size: 20px;
+}
+.material-symbols-outlined.fill { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+
+/* ── Layout ───────────────────────────────────────────────────────────── */
+.app {
+  display: flex;
+  height: 100vh;
+}
+
+/* ── Navigation Rail ──────────────────────────────────────────────────── */
+.nav-rail {
+  width: 80px;
+  background: var(--md-sys-color-surface-container);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 0;
+  gap: 4px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--md-sys-color-outline-variant);
+}
+.nav-rail .nav-fab {
+  width: 56px; height: 56px;
+  border-radius: var(--md-sys-shape-corner-l);
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+  border: none;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  margin-bottom: 16px;
+  transition: box-shadow .2s, transform .2s;
+}
+.nav-rail .nav-fab:hover {
+  box-shadow: var(--md-sys-elevation-3);
+  transform: scale(1.04);
+}
+.nav-rail .nav-fab .material-symbols-outlined { font-size: 28px; }
+.nav-rail .nav-item {
+  width: 56px; height: 32px;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: transparent;
+  color: var(--md-sys-color-on-surface-variant);
+  border: none;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: background .2s;
+  font-size: 20px;
+  position: relative;
+}
+.nav-rail .nav-item:hover { background: var(--md-sys-color-surface-container-high); }
+.nav-rail .nav-item.active { background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container); }
+.nav-rail .nav-item .nav-label {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  font: var(--md-sys-typescale-label-small);
+  white-space: nowrap;
+}
+
+/* ── Main Content ─────────────────────────────────────────────────────── */
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.main-content::-webkit-scrollbar { width: 6px; }
+.main-content::-webkit-scrollbar-thumb { background: var(--md-sys-color-outline-variant); border-radius: 3px; }
+
+/* ── Top App Bar ──────────────────────────────────────────────────────── */
+.top-app-bar {
+  position: sticky; top: 0; z-index: 10;
+  background: var(--md-sys-color-surface-container);
+  padding: 0 24px;
+  height: 64px;
+  display: flex; align-items: center; gap: 16px;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}
+.top-app-bar .headline {
+  font: var(--md-sys-typescale-title-large);
+  color: var(--md-sys-color-on-surface);
+  flex: 1;
+}
+.top-app-bar .version-chip {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 16px;
+  border-radius: var(--md-sys-shape-corner-s);
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  font: var(--md-sys-typescale-label-medium);
+  border: none;
+  cursor: default;
+}
+.top-app-bar .version-chip .dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--md-sys-color-success);
+}
+
+/* ── Content area ─────────────────────────────────────────────────────── */
+.content-area {
+  padding: 24px;
+  max-width: 1200px;
+}
+.content-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+/* ── MD3 Card ─────────────────────────────────────────────────────────── */
+.md3-card {
+  background: var(--md-sys-color-surface-container-low);
+  border-radius: var(--md-sys-shape-corner-l);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  overflow: hidden;
+}
+.md3-card.elevated {
+  background: var(--md-sys-color-surface-container);
+  box-shadow: var(--md-sys-elevation-1);
+}
+.md3-card.filled {
+  background: var(--md-sys-color-surface-container-highest);
+}
+.md3-card-header {
+  padding: 16px 24px 0;
+  display: flex; align-items: center; gap: 12px;
+}
+.md3-card-header .card-icon {
+  width: 40px; height: 40px;
+  border-radius: var(--md-sys-shape-corner-m);
+  display: flex; align-items: center; justify-content: center;
+}
+.md3-card-header .card-icon.primary { background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); }
+.md3-card-header .card-icon.secondary { background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container); }
+.md3-card-header .card-icon.tertiary { background: var(--md-sys-color-tertiary-container); color: var(--md-sys-color-on-tertiary-container); }
+.md3-card-header .card-icon.success { background: var(--md-sys-color-success-container); color: var(--md-sys-color-on-success); }
+.md3-card-header .card-title {
+  font: var(--md-sys-typescale-title-medium);
+  color: var(--md-sys-color-on-surface);
+}
+.md3-card-header .card-subtitle {
+  font: var(--md-sys-typescale-body-small);
+  color: var(--md-sys-color-on-surface-variant);
+}
+.md3-card-body { padding: 16px 24px 24px; }
+
+/* ── Stats Grid ───────────────────────────────────────────────────────── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+@media (max-width: 900px) { .stats-row { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 500px) { .stats-row { grid-template-columns: 1fr; } }
+.stat-item {
+  background: var(--md-sys-color-surface-container);
+  border-radius: var(--md-sys-shape-corner-l);
+  padding: 20px 24px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  display: flex; align-items: center; gap: 16px;
+  transition: box-shadow .2s;
+}
+.stat-item:hover { box-shadow: var(--md-sys-elevation-2); }
+.stat-item .stat-icon {
+  width: 48px; height: 48px;
+  border-radius: var(--md-sys-shape-corner-m);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.stat-item .stat-value {
+  font: var(--md-sys-typescale-headline-small);
+  letter-spacing: -0.5px;
+}
+.stat-item .stat-label {
+  font: var(--md-sys-typescale-label-medium);
+  color: var(--md-sys-color-on-surface-variant);
+  margin-top: 2px;
+}
+
+/* ── Queue Bar ────────────────────────────────────────────────────────── */
+.queue-bar-wrap {
+  position: relative;
+  height: 28px;
+  background: var(--md-sys-color-surface-container-highest);
+  border-radius: var(--md-sys-shape-corner-full);
+  overflow: hidden;
+}
+.queue-bar-fill {
+  height: 100%;
+  border-radius: var(--md-sys-shape-corner-full);
+  transition: width .5s cubic-bezier(0.4, 0.0, 0.2, 1), background .5s;
+}
+.queue-bar-label {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font: var(--md-sys-typescale-label-medium);
+  color: var(--md-sys-color-on-surface);
+}
+
+/* ── MD3 Data Table ───────────────────────────────────────────────────── */
+.md3-table-wrap {
+  overflow-x: auto;
+  border-radius: var(--md-sys-shape-corner-m);
+  border: 1px solid var(--md-sys-color-outline-variant);
+}
+.md3-table {
+  width: 100%;
+  border-collapse: collapse;
+  font: var(--md-sys-typescale-body-small);
+  background: var(--md-sys-color-surface-container-low);
+}
+.md3-table thead { background: var(--md-sys-color-surface-container-high); }
+.md3-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font: var(--md-sys-typescale-label-medium);
+  color: var(--md-sys-color-on-surface-variant);
+  letter-spacing: .04em;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}
+.md3-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  font-family: 'Roboto Mono', 'Cascadia Code', 'Consolas', monospace;
+  font-size: 13px;
+}
+.md3-table tbody tr:last-child td { border-bottom: none; }
+.md3-table tbody tr:hover { background: var(--md-sys-color-surface-container); }
+
+/* ── Chips ────────────────────────────────────────────────────────────── */
+.md3-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 12px;
+  border-radius: var(--md-sys-shape-corner-s);
+  font: var(--md-sys-typescale-label-small);
+  border: 1px solid var(--md-sys-color-outline);
+  background: transparent;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.md3-chip.small { padding: 2px 8px; font-size: 11px; }
+.md3-chip.success { background: var(--md-sys-color-success-container); color: var(--md-sys-color-on-success); border-color: transparent; }
+.md3-chip.warning { background: var(--md-sys-color-warning); color: var(--md-sys-color-on-warning); border-color: transparent; }
+.md3-chip.error { background: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container); border-color: transparent; }
+.md3-chip.primary { background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); border-color: transparent; }
+
+/* ── Buttons ──────────────────────────────────────────────────────────── */
+.md3-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 40px; padding: 0 24px;
+  border-radius: var(--md-sys-shape-corner-full);
+  font: var(--md-sys-typescale-label-large);
+  cursor: pointer;
+  border: none;
+  transition: box-shadow .2s, background .2s, opacity .2s;
+}
+.md3-btn:hover { box-shadow: var(--md-sys-elevation-1); }
+.md3-btn:active { box-shadow: none; }
+.md3-btn.filled {
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+}
+.md3-btn.filled:hover { background: var(--md-sys-color-primary); opacity: .9; }
+.md3-btn.tonal {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+.md3-btn.outlined {
+  background: transparent;
+  border: 1px solid var(--md-sys-color-outline);
+  color: var(--md-sys-color-primary);
+}
+.md3-btn.text {
+  background: transparent;
+  color: var(--md-sys-color-primary);
+  padding: 0 12px;
+}
+.md3-btn.icon {
+  width: 40px; padding: 0;
+  justify-content: center;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: transparent;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.md3-btn.icon:hover { background: var(--md-sys-color-surface-container-highest); }
+.md3-btn.danger { color: var(--md-sys-color-error); }
+
+/* ── Text Fields (Outlined) ───────────────────────────────────────────── */
+.md3-text-field {
+  display: flex; flex-direction: column; gap: 4px;
+}
+.md3-text-field label {
+  font: var(--md-sys-typescale-label-medium);
+  color: var(--md-sys-color-on-surface-variant);
+}
+.md3-text-field input {
+  height: 56px; padding: 0 16px;
+  background: transparent;
+  color: var(--md-sys-color-on-surface);
+  border: 1px solid var(--md-sys-color-outline);
+  border-radius: var(--md-sys-shape-corner-s);
+  font: var(--md-sys-typescale-body-large);
+  transition: border-color .2s, box-shadow .2s;
+}
+.md3-text-field input::placeholder { color: var(--md-sys-color-on-surface-variant); opacity: .6; }
+.md3-text-field input:focus {
+  outline: none;
+  border-color: var(--md-sys-color-primary);
+  box-shadow: inset 0 0 0 1px var(--md-sys-color-primary);
+}
+
+/* ── Forms Row ────────────────────────────────────────────────────────── */
+.forms-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+@media (max-width: 640px) { .forms-row { grid-template-columns: 1fr; } }
+
+/* ── Message feedback ─────────────────────────────────────────────────── */
+.msg {
+  font: var(--md-sys-typescale-body-small);
+  min-height: 20px;
+  margin-top: 8px;
+}
+.msg.success { color: var(--md-sys-color-success); }
+.msg.error { color: var(--md-sys-color-error); }
+
+/* ── Code / Pre blocks ────────────────────────────────────────────────── */
+.md3-pre {
+  background: var(--md-sys-color-surface-dim);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-m);
+  padding: 16px 20px;
+  font-family: 'Roboto Mono', 'Cascadia Code', 'Consolas', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--md-sys-color-on-surface);
+  overflow-x: auto;
+  margin: 8px 0;
+}
+
+/* ── Quick Start links ────────────────────────────────────────────────── */
+.link-card {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px;
+  background: var(--md-sys-color-surface-container);
+  border-radius: var(--md-sys-shape-corner-m);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  text-decoration: none;
+  color: var(--md-sys-color-on-surface);
+  transition: background .2s, box-shadow .2s;
+}
+.link-card:hover { background: var(--md-sys-color-surface-container-high); box-shadow: var(--md-sys-elevation-1); }
+.link-card .link-icon {
+  width: 40px; height: 40px;
+  border-radius: var(--md-sys-shape-corner-m);
+  background: var(--md-sys-color-tertiary-container);
+  color: var(--md-sys-color-on-tertiary-container);
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ── Auth Overlay ─────────────────────────────────────────────────────── */
+.auth-overlay {
+  position: fixed; inset: 0;
+  background: var(--md-sys-color-scrim);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
+}
+.auth-dialog {
+  background: var(--md-sys-color-surface-container-high);
+  border-radius: var(--md-sys-shape-corner-xl);
+  padding: 24px; width: 360px;
+  box-shadow: var(--md-sys-elevation-5);
+}
+.auth-dialog h3 { font: var(--md-sys-typescale-headline-small); margin-bottom: 16px; }
+.auth-dialog p { font: var(--md-sys-typescale-body-medium); color: var(--md-sys-color-on-surface-variant); margin-bottom: 16px; }
+.auth-dialog .md3-text-field { margin-bottom: 16px; }
+.auth-dialog .md3-btn { width: 100%; justify-content: center; }
+
+/* ── Animation ────────────────────────────────────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.md3-card, .stat-item { animation: fadeInUp .3s ease-out; }
+
+/* ── Utility ──────────────────────────────────────────────────────────── */
+.text-mono { font-family: 'Roboto Mono', 'Cascadia Code', 'Consolas', monospace; }
+.text-center { text-align: center; }
+.mt-8 { margin-top: 8px; } .mt-16 { margin-top: 16px; } .mt-24 { margin-top: 24px; }
+.mb-8 { margin-bottom: 8px; } .mb-16 { margin-bottom: 16px; } .mb-24 { margin-bottom: 24px; }
+.gap-16 { display: flex; gap: 16px; flex-wrap: wrap; }
+.flex-between { display: flex; align-items: center; justify-content: space-between; }
+.opacity-50 { opacity: .5; }
+
+/* ── Model mapping tables ─────────────────────────────────────────────── */
+.model-mapping-table {
+  width: auto; min-width: 400px;
+  font: var(--md-sys-typescale-body-small);
+  margin-bottom: 12px;
+}
+.model-mapping-table td { padding: 8px 20px; border-bottom: 1px solid var(--md-sys-color-outline-variant); }
+.model-mapping-table td:first-child { font-family: 'Roboto Mono', monospace; color: var(--md-sys-color-primary); }
+.model-mapping-table td:last-child { color: var(--md-sys-color-on-surface-variant); }
+
+/* ── Log Controls ─────────────────────────────────────────────────────── */
+.log-controls { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.log-controls select {
+  height: 40px; padding: 0 16px;
+  background: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-on-surface);
+  border: 1px solid var(--md-sys-color-outline);
+  border-radius: var(--md-sys-shape-corner-s);
+  font: var(--md-sys-typescale-label-large);
+  cursor: pointer;
+}
+.log-scroll { max-height: 400px; overflow-y: auto; }
+
+/* ── Responsive ───────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .nav-rail { display: none; }
+  .top-app-bar { padding: 0 16px; }
+  .content-area { padding: 16px; }
+}
+
+/* ── Markdown in chat ──────────────────────────────────────────────────── */
+.chat-md p { margin: 4px 0; }
+.chat-md code { background:var(--md-sys-color-surface-container-high); padding:2px 6px; border-radius:var(--md-sys-shape-corner-xs); font-family:'Roboto Mono',Consolas,monospace; font-size:12px; }
+.chat-md pre { background:var(--md-sys-color-surface-dim); border:1px solid var(--md-sys-color-outline-variant); border-radius:var(--md-sys-shape-corner-m); padding:10px 14px; overflow-x:auto; margin:6px 0; }
+.chat-md pre code { background:none; padding:0; font-size:12px; }
+.chat-md blockquote { border-left:3px solid var(--md-sys-color-primary); padding-left:12px; margin:6px 0; color:var(--md-sys-color-on-surface-variant); }
+.chat-md ul, .chat-md ol { padding-left:20px; margin:4px 0; }
+.chat-md h1,.chat-md h2,.chat-md h3,.chat-md h4 { margin:10px 0 4px; font-weight:600; }
+.chat-md a { color:var(--md-sys-color-primary); }
+.chat-md hr { border:none; border-top:1px solid var(--md-sys-color-outline-variant); margin:10px 0; }
+.chat-md table { border-collapse:collapse; margin:6px 0; }
+.chat-md th,.chat-md td { border:1px solid var(--md-sys-color-outline-variant); padding:6px 12px; }
+.chat-md th { background:var(--md-sys-color-secondary-container); color:var(--md-sys-color-on-secondary-container); }
+
+/* ── Tool call block ────────────────────────────────────────────────────── */
+.tool-call-block { background:var(--md-sys-color-success-container); border:1px solid var(--md-sys-color-success); border-radius:var(--md-sys-shape-corner-m); margin:6px 0; overflow:hidden; }
+.tc-header { background:rgba(0,0,0,0.15); padding:6px 14px; font:var(--md-sys-typescale-label-medium); font-family:'Roboto Mono',monospace; color:var(--md-sys-color-on-success); }
+.tc-args { padding:8px 14px; font:var(--md-sys-typescale-body-small); color:var(--md-sys-color-on-surface-variant); line-height:1.6; }
+.tc-arg b { color:var(--md-sys-color-on-surface); }
+
+/* ── Spinner ────────────────────────────────────────────────────────────── */
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Navigation Rail -->
+  <nav class="nav-rail">
+    <button class="nav-fab" id="refreshFab" title="刷新">
+      <span class="material-symbols-outlined">refresh</span>
+    </button>
+    <button class="nav-item active" data-section="dashboard" title="仪表盘">
+      <span class="material-symbols-outlined fill">dashboard</span>
+    </button>
+    <button class="nav-item" data-section="tokens" title="令牌管理">
+      <span class="material-symbols-outlined">key</span>
+    </button>
+    <button class="nav-item" data-section="logs" title="日志">
+      <span class="material-symbols-outlined">receipt_long</span>
+    </button>
+    <button class="nav-item" data-section="chat" title="对话记录">
+      <span class="material-symbols-outlined">chat</span>
+    </button>
+    <button class="nav-item" data-section="tester" title="API测试">
+      <span class="material-symbols-outlined">science</span>
+    </button>
+    <button class="nav-item" data-section="settings" title="设置">
+      <span class="material-symbols-outlined">settings</span>
+    </button>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="main-content" id="mainContent">
+    <!-- Top App Bar -->
+    <header class="top-app-bar">
+      <span class="headline">GLM-2API</span>
+      <div class="version-chip">
+        <span class="dot"></span>
+        <span id="version">-</span>
+      </div>
+      <span style="font:var(--md-sys-typescale-body-small);color:var(--md-sys-color-on-surface-variant)">运行 <span id="uptime">-</span></span>
+    </header>
+
+    <div class="content-area">
+
+      <!-- Dashboard Section -->
+      <section id="sec-dashboard">
+        <!-- Stats Row -->
+        <div class="stats-row" style="margin-bottom:24px">
+          <div class="stat-item">
+            <div class="stat-icon" style="background:var(--md-sys-color-primary-container);color:var(--md-sys-color-on-primary-container)">
+              <span class="material-symbols-outlined">check_circle</span>
+            </div>
+            <div>
+              <div class="stat-value" id="status">正常</div>
+              <div class="stat-label">系统状态</div>
+            </div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-icon" style="background:var(--md-sys-color-secondary-container);color:var(--md-sys-color-on-secondary-container)">
+              <span class="material-symbols-outlined">bolt</span>
+            </div>
+            <div>
+              <div class="stat-value" id="capacity">-</div>
+              <div class="stat-label">总并发容量</div>
+            </div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-icon" style="background:var(--md-sys-color-tertiary-container);color:var(--md-sys-color-on-tertiary-container)">
+              <span class="material-symbols-outlined">key</span>
+            </div>
+            <div>
+              <div class="stat-value" id="tokenCount">-</div>
+              <div class="stat-label">令牌数量</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Queue Card -->
+        <div class="md3-card elevated mb-24">
+          <div class="md3-card-body">
+            <div class="flex-between mb-16">
+              <div>
+                <div style="font:var(--md-sys-typescale-title-medium)">请求队列</div>
+                <div style="font:var(--md-sys-typescale-body-small);color:var(--md-sys-color-on-surface-variant)">当前排队请求数</div>
+              </div>
+              <div style="font:var(--md-sys-typescale-title-large);color:var(--md-sys-color-primary)" id="queuePercent">-</div>
+            </div>
+            <div class="queue-bar-wrap">
+              <div class="queue-bar-fill" id="queueBar" style="width:0%;background:var(--md-sys-color-success)"></div>
+              <div class="queue-bar-label" id="queueLabel">0 / 100</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Token Pool Card -->
+        <div class="md3-card mb-24" id="tokenPoolCard">
+          <div class="md3-card-header">
+            <div class="card-icon primary"><span class="material-symbols-outlined">key</span></div>
+            <div>
+              <div class="card-title">令牌池</div>
+              <div class="card-subtitle">管理所有 GLM API 令牌</div>
+            </div>
+          </div>
+          <div class="md3-card-body">
+            <div class="md3-table-wrap">
+              <table class="md3-table">
+                <thead>
+                  <tr><th>令牌</th><th>邮箱</th><th style="text-align:center">视觉</th><th style="text-align:center">错误</th><th style="text-align:center">并发</th><th style="text-align:center">健康</th><th style="text-align:center">操作</th></tr>
+                </thead>
+                <tbody id="poolBody">
+                  <tr><td colspan="7" style="text-align:center;font-family:Roboto,sans-serif;color:var(--md-sys-color-on-surface-variant)">加载中...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- Quick Start Card -->
+        <div class="md3-card mb-24">
+          <div class="md3-card-header">
+            <div class="card-icon tertiary"><span class="material-symbols-outlined">rocket_launch</span></div>
+            <div>
+              <div class="card-title">快速入门</div>
+              <div class="card-subtitle">API 端点与模型映射参考</div>
+            </div>
+          </div>
+          <div class="md3-card-body">
+            <details class="mb-16">
+              <summary style="cursor:pointer;font:var(--md-sys-typescale-label-large);color:var(--md-sys-color-primary);margin-bottom:8px">模型映射表</summary>
+              <table class="model-mapping-table">
+                <tr><td>glm-5.2</td><td>默认模型（支持深度思考）</td></tr>
+                <tr><td>glm-5.2-think</td><td>强制开启深度思考</td></tr>
+                <tr><td>glm-5.2-nothink</td><td>禁用深度思考</td></tr>
+              </table>
+              <table class="model-mapping-table mt-8">
+                <tr><td>claude-opus-4-6</td><td>→ glm-5.2</td></tr>
+                <tr><td>claude-sonnet-4-6</td><td>→ glm-5.2</td></tr>
+                <tr><td>claude-haiku-4-5</td><td>→ glm-5.2</td></tr>
+                <tr><td>claude-*-nothinking</td><td>→ glm-5.2-nothink</td></tr>
+              </table>
+            </details>
+
+            <details class="mb-8">
+              <summary style="cursor:pointer;font:var(--md-sys-typescale-label-large);color:var(--md-sys-color-primary);margin-bottom:8px">Anthropic Messages 格式 — 非流式</summary>
+              <pre class="md3-pre">curl http://localhost:3099/anthropic/v1/messages \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -d '{"model":"claude-sonnet-4-6","max_tokens":1024,"messages":[{"role":"user","content":"你好"}]}'</pre>
+            </details>
+
+            <details class="mb-8">
+              <summary style="cursor:pointer;font:var(--md-sys-typescale-label-large);color:var(--md-sys-color-primary);margin-bottom:8px">OpenAI 格式 — 流式</summary>
+              <pre class="md3-pre">curl http://localhost:3099/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -d '{"model":"glm-5.2","stream":true,"messages":[{"role":"user","content":"解释量子计算"}]}'</pre>
+            </details>
+
+            <details class="mb-8">
+              <summary style="cursor:pointer;font:var(--md-sys-typescale-label-large);color:var(--md-sys-color-primary);margin-bottom:8px">OpenAI 格式 — 视觉（图片理解）</summary>
+              <pre class="md3-pre">curl http://localhost:3099/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -d '{
+    "model": "glm-5.2",
+    "stream": true,
+    "messages": [{
+      "role": "user",
+      "content": [
+        {"type": "text", "text": "描述这张图片"},
+        {"type": "image_url", "image_url": {"url": "data:image/png;base64,BASE64_ENCODED_IMAGE"}}
+      ]
+    }]
+  }'</pre>
+            </details>
+
+            <details class="mb-8">
+              <summary style="cursor:pointer;font:var(--md-sys-typescale-label-large);color:var(--md-sys-color-primary);margin-bottom:8px">Anthropic 格式 — 视觉（图片理解）</summary>
+              <pre class="md3-pre">curl http://localhost:3099/anthropic/v1/messages \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -d '{
+    "model": "claude-sonnet-4-6",
+    "max_tokens": 1024,
+    "messages": [{
+      "role": "user",
+      "content": [
+        {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": "BASE64_ENCODED_IMAGE"}},
+        {"type": "text", "text": "描述这张图片"}
+      ]
+    }]
+  }'</pre>
+            </details>
+
+            <details class="mb-8">
+              <summary style="cursor:pointer;font:var(--md-sys-typescale-label-large);color:var(--md-sys-color-primary);margin-bottom:8px">更多示例...</summary>
+              <p style="font:var(--md-sys-typescale-body-small);color:var(--md-sys-color-on-surface-variant)">
+                查看完整文档获取 Anthropic 系统提示词、工具调用、GLM 原生格式等示例。
+              </p>
+            </details>
+
+            <button onclick="switchToSection('chat')" class="link-card mt-16" style="border:none;background:transparent;cursor:pointer;text-align:left;width:100%">
+              <div class="link-icon"><span class="material-symbols-outlined">chat</span></div>
+              <div>
+                <div style="font:var(--md-sys-typescale-label-large)">对话记录查看器</div>
+                <div style="font:var(--md-sys-typescale-body-small);color:var(--md-sys-color-on-surface-variant)">查看完整 Prompt、思维链和模型回答</div>
+              </div>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Token Management Section -->
+      <section id="sec-tokens" style="display:none">
+        <div class="md3-card mb-24">
+          <div class="md3-card-header">
+            <div class="card-icon primary"><span class="material-symbols-outlined">key</span></div>
+            <div>
+              <div class="card-title">添加令牌</div>
+              <div class="card-subtitle">粘贴 GLM API 密钥</div>
+            </div>
+          </div>
+          <div class="md3-card-body">
+            <div class="forms-row">
+              <form id="addTokenForm" style="display:flex;flex-direction:column;gap:12px">
+                <div class="md3-text-field">
+                  <label>令牌字符串</label>
+                  <input type="text" id="addTokenInput" placeholder="粘贴 GLM API 密钥..." required>
+                </div>
+                <button type="submit" class="md3-btn filled" style="align-self:flex-start">
+                  <span class="material-symbols-outlined">add</span>
+                  添加令牌
+                </button>
+                <div class="msg" id="addTokenMsg"></div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div class="md3-card" id="tokenManagementTable">
+          <div class="md3-card-header">
+            <div class="card-icon secondary"><span class="material-symbols-outlined">list</span></div>
+            <div>
+              <div class="card-title">现有令牌</div>
+            </div>
+          </div>
+          <div class="md3-card-body">
+            <div class="md3-table-wrap">
+              <table class="md3-table">
+                <thead>
+                  <tr><th>令牌</th><th>邮箱</th><th style="text-align:center">视觉</th><th style="text-align:center">错误</th><th style="text-align:center">并发</th><th style="text-align:center">健康</th><th style="text-align:center">操作</th></tr>
+                </thead>
+                <tbody id="poolBodyTokens">
+                  <tr><td colspan="7" style="text-align:center;font-family:Roboto,sans-serif;color:var(--md-sys-color-on-surface-variant)">加载中...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- Logs Section -->
+      <section id="sec-logs" style="display:none">
+        <div class="md3-card">
+          <div class="md3-card-header">
+            <div class="card-icon tertiary"><span class="material-symbols-outlined">receipt_long</span></div>
+            <div>
+              <div class="card-title">请求日志</div>
+              <div class="card-subtitle">查看 API 请求历史记录</div>
+            </div>
+          </div>
+          <div class="md3-card-body">
+            <div class="log-controls">
+              <select id="logDateSelect"><option value="">今天</option></select>
+              <button class="md3-btn filled" id="loadLogsBtn">
+                <span class="material-symbols-outlined">search</span>
+                加载
+              </button>
+              <span id="logStatsText" style="font:var(--md-sys-typescale-body-small);color:var(--md-sys-color-on-surface-variant)"></span>
+            </div>
+            <div class="log-scroll">
+              <div class="md3-table-wrap">
+                <table class="md3-table">
+                  <thead><tr><th>时间</th><th>方法</th><th>路径</th><th>模型</th><th style="text-align:center">状态</th><th style="text-align:right">耗时</th></tr></thead>
+                  <tbody id="logBody"><tr><td colspan="6" style="text-align:center;font-family:Roboto,sans-serif;color:var(--md-sys-color-on-surface-variant)">点击"加载"查看日志</td></tr></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Chat Section -->
+      <section id="sec-chat" style="display:none">
+        <div class="md3-card">
+          <div class="md3-card-header">
+            <div class="card-icon tertiary"><span class="material-symbols-outlined">chat</span></div>
+            <div>
+              <div class="card-title">对话记录查看器</div>
+              <div class="card-subtitle">查看完整 Prompt、思维链和模型回答</div>
+            </div>
+          </div>
+          <div class="md3-card-body">
+            <div class="chat-controls" style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+              <select id="chatDateSelect" style="height:40px;padding:0 16px;background:var(--md-sys-color-surface-container);color:var(--md-sys-color-on-surface);border:1px solid var(--md-sys-color-outline);border-radius:var(--md-sys-shape-corner-s);font:var(--md-sys-typescale-label-large);cursor:pointer">
+                <option value="">今天</option>
+              </select>
+              <button class="md3-btn filled" id="loadChatsBtn">
+                <span class="material-symbols-outlined">refresh</span>
+                加载
+              </button>
+              <div style="display:flex;align-items:center;gap:8px;margin-left:12px">
+                <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font:var(--md-sys-typescale-label-medium);color:var(--md-sys-color-on-surface-variant)">
+                  <input type="checkbox" id="chatAutoRefreshCheck" checked />
+                  自动刷新
+                </label>
+                <input type="number" id="chatRefreshIntervalInput" value="1" min="1" step="1" style="width:60px;height:32px;padding:0 8px;background:var(--md-sys-color-surface-container);color:var(--md-sys-color-on-surface);border:1px solid var(--md-sys-color-outline);border-radius:var(--md-sys-shape-corner-s);font:var(--md-sys-typescale-body-small)" />
+                <span style="font:var(--md-sys-typescale-label-small);color:var(--md-sys-color-on-surface-variant)">秒</span>
+              </div>
+              <span id="chatStatRepair" class="md3-chip error" style="display:none">
+                <span class="material-symbols-outlined" style="font-size:14px">build</span>
+                <span id="chatRepairCount">0</span> 修复
+              </span>
+              <span id="chatStatNormal" class="md3-chip success" style="display:none">
+                <span class="material-symbols-outlined" style="font-size:14px">check_circle</span>
+                <span id="chatNormalCount">0</span> 正常
+              </span>
+            </div>
+
+            <!-- Two Columns -->
+            <div class="chat-columns" style="display:flex;gap:16px;min-height:400px">
+              <!-- Left: Repair -->
+              <div class="chat-column" style="flex:1;min-width:0;display:flex;flex-direction:column">
+                <div style="padding:12px 16px;background:var(--md-sys-color-surface-container-low);border-radius:var(--md-sys-shape-corner-m);border:1px solid var(--md-sys-color-outline-variant);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <span class="material-symbols-outlined" style="color:var(--md-sys-color-error)">build</span>
+                    <span style="font:var(--md-sys-typescale-label-large)">修复Agent调用</span>
+                  </div>
+                  <span id="chatRepairColCount" style="font:var(--md-sys-typescale-label-medium);color:var(--md-sys-color-on-surface-variant)">0</span>
+                </div>
+                <div id="chatRepairList" style="flex:1;overflow-y:auto;border-radius:var(--md-sys-shape-corner-m);border:1px solid var(--md-sys-color-outline-variant);background:var(--md-sys-color-surface-container-lowest)">
+                  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:8px;color:var(--md-sys-color-on-surface-variant);padding:24px">
+                    <span class="material-symbols-outlined" style="font-size:32px;color:var(--md-sys-color-success)">check_circle</span>
+                    <div style="font:var(--md-sys-typescale-label-large)">无修复调用</div>
+                    <div style="font:var(--md-sys-typescale-body-small)">所有请求解析正常</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right: Normal -->
+              <div class="chat-column" style="flex:1;min-width:0;display:flex;flex-direction:column">
+                <div style="padding:12px 16px;background:var(--md-sys-color-surface-container-low);border-radius:var(--md-sys-shape-corner-m);border:1px solid var(--md-sys-color-outline-variant);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <span class="material-symbols-outlined" style="color:var(--md-sys-color-success)">chat_bubble</span>
+                    <span style="font:var(--md-sys-typescale-label-large)">正常请求调用</span>
+                  </div>
+                  <span id="chatNormalColCount" style="font:var(--md-sys-typescale-label-medium);color:var(--md-sys-color-on-surface-variant)">0</span>
+                </div>
+                <div id="chatNormalList" style="flex:1;overflow-y:auto;border-radius:var(--md-sys-shape-corner-m);border:1px solid var(--md-sys-color-outline-variant);background:var(--md-sys-color-surface-container-lowest)">
+                  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:8px;color:var(--md-sys-color-on-surface-variant);padding:24px">
+                    <span class="material-symbols-outlined" style="font-size:32px">inbox</span>
+                    <div style="font:var(--md-sys-typescale-label-large)">加载中...</div>
+                    <div style="font:var(--md-sys-typescale-body-small)">点击"加载"获取日志</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- API Tester Section -->
+      <section id="sec-tester" style="display:none">
+        <div class="md3-card">
+          <div class="md3-card-header">
+            <div class="card-icon primary"><span class="material-symbols-outlined">science</span></div>
+            <div>
+              <div class="card-title">API 测试</div>
+              <div class="card-subtitle">测试 API 连通性和模型响应</div>
+            </div>
+          </div>
+          <div class="md3-card-body">
+            <!-- Config Row -->
+            <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;margin-bottom:16px;align-items:end">
+              <div class="md3-text-field">
+                <label>模型</label>
+                <select id="testerModel" style="height:56px;padding:0 16px;background:transparent;color:var(--md-sys-color-on-surface);border:1px solid var(--md-sys-color-outline);border-radius:var(--md-sys-shape-corner-s);font:var(--md-sys-typescale-body-large);cursor:pointer">
+                  <option value="">加载中...</option>
+                </select>
+              </div>
+              <div class="md3-text-field">
+                <label>令牌池 (自动分配)</label>
+                <select id="testerAccount" style="height:56px;padding:0 16px;background:transparent;color:var(--md-sys-color-on-surface);border:1px solid var(--md-sys-color-outline);border-radius:var(--md-sys-shape-corner-s);font:var(--md-sys-typescale-body-large);cursor:pointer">
+                  <option value="">自动选择</option>
+                </select>
+              </div>
+              <div style="display:flex;gap:8px">
+                <button class="md3-btn filled" id="testerSendBtn">
+                  <span class="material-symbols-outlined">send</span>
+                  发送
+                </button>
+                <button class="md3-btn tonal" id="testerClearBtn" title="清空对话">
+                  <span class="material-symbols-outlined">delete</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Image Upload -->
+            <div style="margin-bottom:16px">
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <button class="md3-btn outlined" id="testerUploadBtn" style="height:36px">
+                  <span class="material-symbols-outlined" style="font-size:18px">image</span>
+                  上传图片
+                </button>
+                <input type="file" id="testerFileInput" accept="image/*" style="display:none" />
+                <div id="testerImagePreview" style="display:none;position:relative">
+                  <img id="testerPreviewImg" style="height:64px;border-radius:var(--md-sys-shape-corner-s);border:1px solid var(--md-sys-color-outline-variant)" />
+                  <button onclick="document.getElementById('testerImagePreview').style.display='none';testerImageData=''" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:var(--md-sys-color-error);color:var(--md-sys-color-on-error);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;line-height:1">&times;</button>
+                </div>
+                <span id="testerImageName" style="font:var(--md-sys-typescale-body-small);color:var(--md-sys-color-on-surface-variant)"></span>
+              </div>
+            </div>
+
+            <!-- Chat Messages -->
+            <div id="testerMessages" style="min-height:300px;max-height:500px;overflow-y:auto;border-radius:var(--md-sys-shape-corner-m);border:1px solid var(--md-sys-color-outline-variant);background:var(--md-sys-color-surface-container-lowest);padding:16px">
+              <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;gap:12px;color:var(--md-sys-color-on-surface-variant)">
+                <span class="material-symbols-outlined" style="font-size:48px;opacity:0.3">forum</span>
+                <div style="font:var(--md-sys-typescale-label-large)">在下方输入消息开始测试</div>
+              </div>
+            </div>
+
+            <!-- Input -->
+            <div style="display:flex;gap:12px;margin-top:16px;align-items:end">
+              <div class="md3-text-field" style="flex:1">
+                <label>消息</label>
+                <input type="text" id="testerInput" placeholder="输入测试消息..." style="height:56px" />
+              </div>
+            </div>
+
+            <!-- Status -->
+            <div id='testerStatus' style='font:var(--md-sys-typescale-body-small);color:var(--md-sys-color-on-surface-variant);margin-top:8px;min-height:20px'></div>
+
+            <!-- Image Generation -->
+            <div style='margin-top:24px;border-top:1px solid var(--md-sys-color-outline-variant);padding-top:24px'>
+              <div style='font:var(--md-sys-typescale-title-medium);margin-bottom:12px'>图像生成</div>
+              <div style='display:grid;grid-template-columns:1fr auto;gap:12px;margin-bottom:12px;align-items:end'>
+                <div class='md3-text-field'>
+                  <label>提示词</label>
+                  <input type='text' id='imgPrompt' placeholder='描述你想生成的图像...' style='height:56px' />
+                </div>
+                <button class='md3-btn filled' id='imgGenerateBtn'>
+                  <span class='material-symbols-outlined'>image</span>
+                  生成
+                </button>
+              </div>
+              <div id='imgResult' style='min-height:60px;display:flex;flex-wrap:wrap;gap:12px;align-items:center'></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Settings Section -->
+      <section id="sec-settings" style="display:none">
+        <div class="md3-card mb-24">
+          <div class="md3-card-header">
+            <div class="card-icon secondary"><span class="material-symbols-outlined">settings</span></div>
+            <div>
+              <div class="card-title">运行配置</div>
+              <div class="card-subtitle">当前生效的环境变量配置（只读）</div>
+            </div>
+          </div>
+          <div class="md3-card-body">
+            <div class="md3-table-wrap">
+              <table class="md3-table">
+                <thead>
+                  <tr><th>配置项</th><th>当前值</th><th>说明</th></tr>
+                </thead>
+                <tbody id="settingsBody">
+                  <tr><td colspan="3" style="text-align:center;font-family:Roboto,sans-serif;color:var(--md-sys-color-on-surface-variant)">加载中...</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p style="font:var(--md-sys-typescale-body-small);color:var(--md-sys-color-on-surface-variant);margin-top:16px">
+              提示：修改配置请编辑项目根目录下的 <code style="background:var(--md-sys-color-surface-container);padding:2px 6px;border-radius:4px">.env</code> 文件并重启服务。
+            </p>
+          </div>
+        </div>
+
+        <div class="md3-card">
+          <div class="md3-card-header">
+            <div class="card-icon tertiary"><span class="material-symbols-outlined">info</span></div>
+            <div>
+              <div class="card-title">环境变量说明</div>
+              <div class="card-subtitle">所有可配置的环境变量</div>
+            </div>
+          </div>
+          <div class="md3-card-body">
+            <div class="md3-table-wrap">
+              <table class="md3-table">
+                <thead>
+                  <tr><th>变量名</th><th>默认值</th><th>说明</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>PORT</td><td>3000</td><td>服务监听端口</td></tr>
+                  <tr><td>API_KEY</td><td>(空)</td><td>API 访问密钥，为空则不验证</td></tr>
+                  <tr><td>GLM_TOKENS</td><td>(空)</td><td>GLM API 密钥，逗号分隔</td></tr>
+                  <tr><td>MAX_CONCURRENT_PER_TOKEN</td><td>2</td><td>每个密钥最大并发请求数</td></tr>
+                  <tr><td>TOKEN_DEAD_THRESHOLD</td><td>5</td><td>连续错误次数超过此值标记密钥为死亡</td></tr>
+                  <tr><td>HEALTH_CHECK_INTERVAL</td><td>600</td><td>健康检查间隔（秒）</td></tr>
+                  <tr><td>IDLE_THRESHOLD</td><td>1800</td><td>密钥空闲阈值（秒），超过后执行健康检查</td></tr>
+                  <tr><td>MERGE_THINKING</td><td>false</td><td>是否合并思考内容到输出</td></tr>
+                  <tr><td>HTTPS_PROXY</td><td>(空)</td><td>HTTPS 代理地址</td></tr>
+                  <tr><td>LOG_DIR</td><td>(默认路径)</td><td>日志存储目录</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <div style="text-align:center;padding:16px;font:var(--md-sys-typescale-body-small);color:var(--md-sys-color-on-surface-variant)">
+        上次刷新: <span id="lastRefresh">-</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Auth Overlay -->
+<div class="auth-overlay" id="authOverlay" style="display:none">
+  <div class="auth-dialog">
+    <h3>需要 API Key</h3>
+    <p>此服务器已配置 API_KEY 验证，请输入密钥后继续。</p>
+    <div class="md3-text-field">
+      <label>API Key</label>
+      <input type="password" id="authKeyInput" placeholder="输入 API Key...">
+    </div>
+    <button class="md3-btn filled" id="authSubmitBtn">
+      <span class="material-symbols-outlined">lock_open</span>
+      验证
+    </button>
+    <div class="msg" id="authMsg" style="text-align:center"></div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let refreshTimer = null;
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function maskToken(token) {
+  const t = String(token || '');
+  return t.length <= 16 ? t : t.slice(0, 12) + '...(' + t.length + ')';
+}
+
+function getApiKey() { return sessionStorage.getItem('adminApiKey') || ''; }
+function authHeaders() {
+  const key = getApiKey();
+  return key ? { 'Authorization': 'Bearer ' + key } : {};
+}
+
+async function apiFetch(url, options = {}) {
+  const headers = { ...authHeaders(), ...(options.headers || {}) };
+  const res = await fetch(url, { ...options, headers });
+  if (res.status === 401) {
+    sessionStorage.removeItem('adminApiKey');
+    $('authOverlay').style.display = 'flex';
+    throw new Error('unauthorized');
+  }
+  return res;
+}
+
+function formatUptime(sec) {
+  const d = Math.floor(sec / 86400);
+  const h = Math.floor((sec % 86400) / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  const parts = [];
+  if (d) parts.push(d + '天');
+  if (h) parts.push(h + '时');
+  if (m) parts.push(m + '分');
+  parts.push(s + '秒');
+  return parts.join(' ');
+}
+
+function formatDuration(sec) {
+  if (sec < 60) return sec + '秒';
+  if (sec < 3600) return Math.floor(sec / 60) + '分' + (sec % 60) + '秒';
+  if (sec < 86400) return Math.floor(sec / 3600) + '时' + Math.floor((sec % 3600) / 60) + '分';
+  return Math.floor(sec / 86400) + '天' + Math.floor((sec % 86400) / 3600) + '时';
+}
+
+function healthDot(errorCount, active, max) {
+  if (errorCount >= 3) return '<span class="md3-chip error small">不可用</span>';
+  if (errorCount >= 1) return '<span class="md3-chip warning small">异常</span>';
+  if (active >= max) return '<span class="md3-chip warning small">满载</span>';
+  return '<span class="md3-chip success small">正常</span>';
+}
+
+function visionLabel(v) {
+  return '<span class="md3-chip success small">支持</span>';
+}
+
+function render(data) {
+  $('version').textContent = data.version;
+  $('uptime').textContent = formatUptime(data.uptimeSeconds);
+  $('status').textContent = '正常';
+  $('capacity').textContent = data.totalCapacity;
+  $('tokenCount').textContent = data.pool.length;
+
+  // Queue bar
+  const q = data.queue.queued;
+  const qMax = data.queue.maxQueueSize;
+  const pct = Math.min(100, (q / qMax) * 100);
+  const qBar = $('queueBar');
+  qBar.style.width = pct + '%';
+  qBar.style.background = pct > 80 ? 'var(--md-sys-color-error)' : pct > 50 ? 'var(--md-sys-color-warning)' : 'var(--md-sys-color-success)';
+  $('queueLabel').textContent = q + ' / ' + qMax;
+  $('queuePercent').textContent = Math.round(pct) + '%';
+
+  function buildPoolTable(bodyId) {
+    const tbody = $(bodyId);
+    if (data.pool.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;font-family:Roboto;color:var(--md-sys-color-on-surface-variant)">无令牌</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.pool.map(t => {
+      const emailDisplay = t.email ? escHtml(t.email) : (t.dead ? '<span style="color:var(--md-sys-color-on-surface-variant);opacity:.5">—</span>' : '<span style="color:var(--md-sys-color-on-surface-variant);font-style:italic">未知</span>');
+      const rowStyle = t.dead ? 'opacity:0.5' : '';
+      const deleteBtn = `<button onclick="deleteToken(${t.id})" class="md3-btn icon danger" title="删除"><span class="material-symbols-outlined">delete</span></button>`;
+      return `<tr style="${rowStyle}">
+        <td title="${escHtml(t.fullToken || '')}">${escHtml(maskToken(t.token))}</td>
+        <td>${emailDisplay}</td>
+        <td style="text-align:center">${visionLabel(t.visionCapable)}</td>
+        <td style="text-align:center">${t.errorCount}</td>
+        <td style="text-align:center">${t.activeRequests} / ${t.maxConcurrent}</td>
+        <td style="text-align:center">${healthDot(t.errorCount, t.activeRequests, t.maxConcurrent)}</td>
+        <td style="text-align:center">${deleteBtn}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  buildPoolTable('poolBody');
+  buildPoolTable('poolBodyTokens');
+
+  // Sessions
+  const sessions = data.sessions;
+  const summaryText = sessions.count + ' 个会话 · TTL: ' + formatDuration(sessions.ttl);
+
+
+
+  $('lastRefresh').textContent = new Date().toLocaleTimeString();
+}
+
+async function fetchStats() {
+  try {
+    const res = await apiFetch('/admin/api/stats');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    render(data);
+  } catch (e) {
+    if (e.message !== 'unauthorized') console.error('fetchStats error:', e);
+  }
+}
+
+// Auto-refresh
+function setupRefresh() {
+  if (refreshTimer) clearInterval(refreshTimer);
+  const ms = parseInt($('interval')?.value || 10000);
+  if (ms > 0) refreshTimer = setInterval(fetchStats, ms);
+  $('lastRefresh').textContent = new Date().toLocaleTimeString();
+}
+
+// Refresh FAB
+$('refreshFab').addEventListener('click', () => {
+  $('refreshFab').querySelector('.material-symbols-outlined').style.transform = 'rotate(360deg)';
+  $('refreshFab').querySelector('.material-symbols-outlined').style.transition = 'transform .4s';
+  fetchStats();
+  setTimeout(() => {
+    $('refreshFab').querySelector('.material-symbols-outlined').style.transform = 'rotate(0deg)';
+    $('refreshFab').querySelector('.material-symbols-outlined').style.transition = 'none';
+  }, 400);
+});
+
+// Navigation
+document.querySelectorAll('.nav-rail .nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-rail .nav-item').forEach(n => {
+      n.classList.remove('active');
+      n.querySelector('.material-symbols-outlined').classList.remove('fill');
+    });
+    item.classList.add('active');
+    item.querySelector('.material-symbols-outlined').classList.add('fill');
+
+    const section = item.dataset.section;
+    ['dashboard', 'tokens', 'sessions', 'logs', 'chat', 'tester', 'settings'].forEach(s => {
+      const el = document.getElementById('sec-' + s);
+      if (el) el.style.display = s === section ? 'block' : 'none';
+    });
+    if (section === 'chat' && !chatInitialized) initChatSection();
+    if (section === 'tester' && !testerInitialized) initTesterSection();
+    if (section === 'settings') loadSettings();
+  });
+});
+
+// Auth
+$('authSubmitBtn').addEventListener('click', () => {
+  const key = $('authKeyInput').value.trim();
+  if (!key) { $('authMsg').className = 'msg error'; $('authMsg').textContent = '请输入 API Key'; return; }
+  sessionStorage.setItem('adminApiKey', key);
+  $('authOverlay').style.display = 'none';
+  $('authMsg').textContent = '';
+  fetchStats();
+});
+$('authKeyInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('authSubmitBtn').click(); });
+
+// Token management
+async function deleteToken(id) {
+  if (!confirm('确定删除此令牌？此操作不可撤销。')) return;
+  try {
+    const res = await apiFetch('/admin/api/token/' + id, { method: 'DELETE' });
+    const data = await res.json();
+    if (data.success) fetchStats();
+    else alert('删除失败: ' + (data.message || '未知错误'));
+  } catch (err) { alert('删除失败: ' + err.message); }
+}
+
+$('addTokenForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const token = $('addTokenInput').value.trim();
+  const msgEl = $('addTokenMsg');
+  msgEl.textContent = '检查中...';
+  msgEl.className = 'msg';
+  try {
+    // 先获取当前池，检查是否已存在
+    const statsRes = await apiFetch('/admin/api/stats');
+    const statsData = await statsRes.json();
+    const exists = statsData.pool.some(t => t.fullToken === token);
+    if (exists) {
+      msgEl.className = 'msg error';
+      msgEl.textContent = '令牌已存在，请勿重复添加';
+      return;
+    }
+    msgEl.textContent = '添加中...';
+    const res = await apiFetch('/admin/api/token/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      msgEl.className = 'msg success';
+      let msg = '添加成功！';
+      if (data.email) msg += ' 邮箱: ' + data.email;
+      msg += ' | 视觉: ' + (data.visionCapable === true ? '支持' : data.visionCapable === false ? '不支持' : '未知');
+      msgEl.textContent = msg;
+      $('addTokenInput').value = '';
+      fetchStats();
+    } else {
+      msgEl.className = 'msg error';
+      msgEl.textContent = data.error?.message || '添加失败';
+    }
+  } catch (err) {
+    msgEl.className = 'msg error';
+    msgEl.textContent = err.message === 'unauthorized' ? '认证失败' : '请求失败';
+  }
+});
+
+
+// Log dates
+async function loadLogDates() {
+  try {
+    const res = await apiFetch('/admin/api/logs/dates');
+    if (!res.ok) return;
+    const data = await res.json();
+    ['logDateSelect'].forEach(selId => {
+      const sel = $(selId);
+      sel.innerHTML = '<option value="">今天</option>';
+      (data.dates || []).forEach(d => { const o = document.createElement('option'); o.value = d; o.textContent = d; sel.appendChild(o); });
+    });
+  } catch {}
+}
+
+// Load request logs
+async function loadLogs() {
+  const date = $('logDateSelect').value;
+  const tbody = $('logBody');
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;font-family:Roboto;color:var(--md-sys-color-on-surface-variant)">加载中...</td></tr>';
+  try {
+    const url = date ? '/admin/api/logs/history?date=' + date + '&count=100' : '/admin/api/logs?count=100';
+    const res = await apiFetch(url);
+    const data = await res.json();
+    const logs = data.logs || [];
+    $('logStatsText').textContent = data.stats ? `总计 ${data.stats.totalLogged} 条 · 5分钟内 ${data.stats.last5min} 条 · 平均 ${data.stats.avgDuration5min}ms` : `${logs.length} 条`;
+    if (logs.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;font-family:Roboto;color:var(--md-sys-color-on-surface-variant)">无记录</td></tr>';
+      return;
+    }
+    tbody.innerHTML = logs.reverse().map(l => {
+      const statusColor = l.status >= 400 ? 'var(--md-sys-color-error)' : 'var(--md-sys-color-success)';
+      const d = l.time ? new Date(l.time) : null;
+      const time = d ? String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0') + ':' + String(d.getSeconds()).padStart(2,'0') : '-';
+      return `<tr><td>${time}</td><td>${escHtml(l.method)}</td><td>${escHtml(l.path)}</td><td>${escHtml(l.model)}</td><td style="text-align:center;color:${statusColor}">${l.status}</td><td style="text-align:right">${l.duration}ms</td></tr>`;
+    }).join('');
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--md-sys-color-error)">加载失败</td></tr>';
+  }
+}
+
+$('loadLogsBtn').addEventListener('click', loadLogs);
+
+// ── Section switch helper ──
+function switchToSection(sectionId) {
+  document.querySelectorAll('.nav-rail .nav-item').forEach(n => {
+    n.classList.remove('active');
+    n.querySelector('.material-symbols-outlined').classList.remove('fill');
+  });
+  const target = document.querySelector(`.nav-rail .nav-item[data-section="${sectionId}"]`);
+  if (target) {
+    target.classList.add('active');
+    target.querySelector('.material-symbols-outlined').classList.add('fill');
+  }
+  ['dashboard', 'tokens', 'sessions', 'logs', 'chat', 'tester', 'settings'].forEach(s => {
+    const el = document.getElementById('sec-' + s);
+    if (el) el.style.display = s === sectionId ? 'block' : 'none';
+  });
+  if (sectionId === 'chat' && !chatInitialized) initChatSection();
+  if (sectionId === 'tester' && !testerInitialized) initTesterSection();
+}
+
+// ── Chat Section ──
+let chatInitialized = false;
+let chatCacheEntries = [];
+let chatCardMap = new Map();
+let chatAutoRefreshTimer = null;
+let chatIsLoading = false;
+
+// Marked config
+if (typeof marked !== 'undefined') {
+  marked.setOptions({ breaks: true, gfm: true });
+}
+
+function renderMd(text) {
+  if (!text || typeof marked === 'undefined') return escHtml(text || '');
+  const html = marked.parse(text);
+  if (typeof DOMPurify !== 'undefined') return DOMPurify.sanitize(html, { ADD_ATTR: ['target'] });
+  return html;
+}
+
+function formatChatTime(isoStr) {
+  if (!isoStr) return '-';
+  const d = new Date(isoStr);
+  return d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0') + ' ' +
+    String(d.getHours()).padStart(2, '0') + ':' +
+    String(d.getMinutes()).padStart(2, '0') + ':' +
+    String(d.getSeconds()).padStart(2, '0');
+}
+
+function extractChatTitle(messages, entry) {
+  if (entry && entry.type === 'image') {
+    return '图像生成: ' + (entry.prompt || '');
+  }
+  if (!Array.isArray(messages)) return '(无消息)';
+  for (const msg of messages) {
+    if (msg.role === 'user') {
+      if (typeof msg.content === 'string') return msg.content;
+      if (Array.isArray(msg.content)) {
+        for (const part of msg.content) {
+          if (part.type === 'text') return part.text;
+        }
+      }
+    }
+  }
+  return '(系统消息)';
+}
+
+function hashChatEntry(e) {
+  const p = [e.prompt || '', e.response || '', e.reasoning || '', e.raw || '', e.model || '', Number(e.duration) || 0, e.stream ? 1 : 0];
+  if (e.uploadedFiles) for (const f of e.uploadedFiles) { p.push(f.name || ''); p.push(f.content || ''); }
+  if (e.images) for (const url of e.images) { p.push(url); }
+  let h = 5381; const s = p.join('|'); for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return h;
+}
+
+function formatToolCalls(text) {
+  if (!text) return '';
+  return text.replace(/\[Tool:\s*([^\]]+)\]\s*(\{[\s\S]*?\})?/g, (match, name, argsStr) => {
+    let jsonStr = argsStr || '';
+    if (jsonStr) {
+      let depth = 0, end = -1, inStr = false, esc = false;
+      for (let i = 0; i < jsonStr.length; i++) {
+        const c = jsonStr[i];
+        if (esc) { esc = false; continue; }
+        if (c === '\\') { esc = true; continue; }
+        if (c === '"') { inStr = !inStr; continue; }
+        if (inStr) continue;
+        if (c === '{') depth++;
+        else if (c === '}') { depth--; if (depth === 0) { end = i + 1; break; } }
+      }
+      if (end > 0) jsonStr = jsonStr.slice(0, end);
+    }
+    let formattedArgs = '';
+    if (jsonStr) {
+      try {
+        const parsed = JSON.parse(jsonStr);
+        const lines = [];
+        for (const [k, v] of Object.entries(parsed)) {
+          const val = typeof v === 'string' && v.length > 100 ? v.slice(0, 100) + '...' : v;
+          lines.push('<span class="tc-arg"><b>' + escHtml(k) + '</b>: ' + escHtml(String(val)) + '</span>');
+        }
+        formattedArgs = '<div class="tc-args">' + lines.join('<br>') + '</div>';
+      } catch {
+        formattedArgs = '<div class="tc-args"><code>' + escHtml(jsonStr) + '</code></div>';
+      }
+    }
+    return '<div class="tool-call-block">' +
+      '<div class="tc-header"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle">build</span> ' + escHtml(name) + '</div>' +
+      formattedArgs +
+      '</div>';
+  });
+}
+
+window.toggleChatSection = function (header) {
+  const body = header.nextElementSibling;
+  const arrow = header.querySelector('.sec-arrow');
+  if (!body) return;
+  body.style.display = body.style.display === 'none' ? 'block' : 'none';
+  if (arrow) arrow.classList.toggle('open');
+};
+
+window.toggleChatFile = function (header) {
+  const body = header.nextElementSibling;
+  const arrow = header.querySelector('.file-arrow');
+  if (!body) return;
+  body.style.display = body.style.display === 'none' ? 'block' : 'none';
+  if (arrow) arrow.classList.toggle('open');
+};
+
+window.copyChatText = function (btn) {
+  const targetId = btn.dataset.copyTarget;
+  const el = document.getElementById(targetId);
+  if (!el) return;
+  navigator.clipboard.writeText(el.textContent || '').then(() => {
+    const origHTML = btn.innerHTML;
+    btn.innerHTML = '<span class="material-symbols-outlined">check</span>已复制';
+    setTimeout(() => btn.innerHTML = origHTML, 1500);
+  });
+};
+
+function buildChatEntryDetail(e) {
+  const prompt = e.prompt || '';
+  const reasoning = e.reasoning || '';
+  const response = e.response || '';
+  const rawContent = e.raw || '';
+  const files = e.uploadedFiles || [];
+  const images = e.images || [];
+  let html = '<div style="padding:0 16px 16px">';
+
+  if (files.length > 0) {
+    html += '<div style="border-bottom:1px solid var(--md-sys-color-outline-variant);padding:8px 0">';
+    html += '<div onclick="toggleChatSection(this)" style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;user-select:none">';
+    html += '<span style="width:28px;height:28px;border-radius:var(--md-sys-shape-corner-s);display:flex;align-items:center;justify-content:center;background:var(--md-sys-color-tertiary-container);color:var(--md-sys-color-on-tertiary-container);font-size:16px"><span class="material-symbols-outlined" style="font-size:16px">attach_file</span></span>';
+    html += '<span style="flex:1;font:var(--md-sys-typescale-label-medium);color:var(--md-sys-color-on-surface)">上传文件</span>';
+    html += '<span style="padding:1px 8px;border-radius:var(--md-sys-shape-corner-s);font:var(--md-sys-typescale-label-small);background:var(--md-sys-color-tertiary-container);color:var(--md-sys-color-on-tertiary-container)">' + files.length + ' 个文件</span>';
+    html += '<span class="material-symbols-outlined sec-arrow" style="font-size:18px;color:var(--md-sys-color-on-surface-variant)">chevron_right</span>';
+    html += '</div>';
+    html += '<div style="display:none;padding:6px 0 14px">';
+    for (let fi = 0; fi < files.length; fi++) {
+      const f = files[fi];
+      const fileId = 'chat-file-' + e.time.replace(/[^a-zA-Z0-9]/g, '') + '-' + fi;
+      html += '<div style="margin:6px 0;background:var(--md-sys-color-surface-container);border:1px solid var(--md-sys-color-outline-variant);border-radius:var(--md-sys-shape-corner-s);overflow:hidden">';
+      html += '<div onclick="toggleChatFile(this)" style="display:flex;align-items:center;gap:8px;padding:8px 14px;cursor:pointer">';
+      html += '<span class="material-symbols-outlined file-arrow" style="font-size:16px">chevron_right</span>';
+      html += '<span>' + escHtml(f.name) + '</span>';
+      html += '<span style="font:var(--md-sys-typescale-label-small);color:var(--md-sys-color-outline);margin-left:auto">' + (f.content ? f.content.length + ' 字符' : '空') + '</span>';
+      html += '</div>';
+      html += '<div class="file-body" style="display:none;padding:0 14px 12px">';
+      html += '<button onclick="event.stopPropagation();copyChatText(this)" data-copy-target="' + fileId + '" style="display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 8px;border:none;background:transparent;color:var(--md-sys-color-primary);cursor:pointer;font-size:11px;font-family:inherit"><span class="material-symbols-outlined" style="font-size:14px">content_copy</span>复制</button>';
+      html += '<div style="background:var(--md-sys-color-surface-dim);border:1px solid var(--md-sys-color-outline-variant);border-radius:var(--md-sys-shape-corner-m);padding:12px 16px;font-family:\'Roboto Mono\',Consolas,monospace;font-size:12px;line-height:1.6;overflow-x:auto;white-space:pre-wrap;word-break:break-word;max-height:360px;overflow-y:auto" id="' + fileId + '">' + escHtml(f.content || '') + '</div>';
+      html += '</div></div>';
+    }
+    html += '</div></div>';
+  }
+
+  // Images
+  if (images.length > 0) {
+    html += '<div style="border-bottom:1px solid var(--md-sys-color-outline-variant);padding:8px 0">';
+    html += '<div onclick="toggleChatSection(this)" style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;user-select:none">';
+    html += '<span style="width:28px;height:28px;border-radius:var(--md-sys-shape-corner-s);display:flex;align-items:center;justify-content:center;background:var(--md-sys-color-tertiary-container);color:var(--md-sys-color-on-tertiary-container);font-size:16px"><span class="material-symbols-outlined" style="font-size:16px">image</span></span>';
+    html += '<span style="flex:1;font:var(--md-sys-typescale-label-medium);color:var(--md-sys-color-on-surface)">生成的图片</span>';
+    html += '<span style="padding:1px 8px;border-radius:var(--md-sys-shape-corner-s);font:var(--md-sys-typescale-label-small);background:var(--md-sys-color-tertiary-container);color:var(--md-sys-color-on-tertiary-container)">' + images.length + ' 张</span>';
+    html += '<span class="material-symbols-outlined sec-arrow" style="font-size:18px;color:var(--md-sys-color-on-surface-variant)">chevron_right</span>';
+    html += '</div>';
+    html += '<div style="display:none;padding:6px 0 14px;display:flex;flex-wrap:wrap;gap:12px">';
+    for (const url of images) {
+      html += '<div style="display:flex;flex-direction:column;align-items:center;gap:4px">';
+      html += '<img src="' + escHtml(url) + '" style="max-width:200px;max-height:200px;border-radius:var(--md-sys-shape-corner-m);border:1px solid var(--md-sys-color-outline-variant)" onerror="this.style.display=\'none\'" />';
+      html += '<a href="' + escHtml(url) + '" target="_blank" style="font:var(--md-sys-typescale-label-small);color:var(--md-sys-color-primary)">查看原图</a>';
+      html += '</div>';
+    }
+    html += '</div></div>';
+  }
+
+  // Prompt
+  html += '<div style="border-bottom:1px solid var(--md-sys-color-outline-variant);padding:8px 0">';
+  html += '<div onclick="toggleChatSection(this)" style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;user-select:none">';
+  html += '<span style="width:28px;height:28px;border-radius:var(--md-sys-shape-corner-s);display:flex;align-items:center;justify-content:center;background:var(--md-sys-color-tertiary-container);color:var(--md-sys-color-on-tertiary-container);font-size:16px"><span class="material-symbols-outlined" style="font-size:16px">arrow_upward</span></span>';
+  html += '<span style="flex:1;font:var(--md-sys-typescale-label-medium);color:var(--md-sys-color-on-surface)">完整 Prompt</span>';
+  html += '<span style="padding:1px 8px;border-radius:var(--md-sys-shape-corner-s);font:var(--md-sys-typescale-label-small);background:var(--md-sys-color-tertiary-container);color:var(--md-sys-color-on-tertiary-container)">' + prompt.length + ' 字符</span>';
+  html += '<span class="material-symbols-outlined sec-arrow" style="font-size:18px;color:var(--md-sys-color-on-surface-variant)">chevron_right</span>';
+  html += '</div>';
+  const promptId = 'chat-prompt-' + e.time.replace(/[^a-zA-Z0-9]/g, '');
+  html += '<div style="display:none;padding:6px 0 14px">';
+  html += '<button onclick="event.stopPropagation();copyChatText(this)" data-copy-target="' + promptId + '" style="display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 8px;border:none;background:transparent;color:var(--md-sys-color-primary);cursor:pointer;font-size:11px;font-family:inherit"><span class="material-symbols-outlined" style="font-size:14px">content_copy</span>复制</button>';
+  html += '<div style="background:var(--md-sys-color-surface-dim);border:1px solid var(--md-sys-color-outline-variant);border-radius:var(--md-sys-shape-corner-m);padding:12px 16px;font-family:\'Roboto Mono\',Consolas,monospace;font-size:12px;line-height:1.6;overflow-x:auto;white-space:pre-wrap;word-break:break-word;max-height:360px;overflow-y:auto" id="' + promptId + '">' + escHtml(prompt) + '</div>';
+  html += '</div></div>';
+
+  // Thinking
+  if (reasoning) {
+    html += '<div style="border-bottom:1px solid var(--md-sys-color-outline-variant);padding:8px 0">';
+    html += '<div onclick="toggleChatSection(this)" style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;user-select:none">';
+    html += '<span style="width:28px;height:28px;border-radius:var(--md-sys-shape-corner-s);display:flex;align-items:center;justify-content:center;background:var(--md-sys-color-primary-container);color:var(--md-sys-color-on-primary-container);font-size:16px"><span class="material-symbols-outlined" style="font-size:16px">psychology</span></span>';
+    html += '<span style="flex:1;font:var(--md-sys-typescale-label-medium);color:var(--md-sys-color-on-surface)">深度思考</span>';
+    html += '<span style="padding:1px 8px;border-radius:var(--md-sys-shape-corner-s);font:var(--md-sys-typescale-label-small);background:var(--md-sys-color-primary-container);color:var(--md-sys-color-on-primary-container)">推理链</span>';
+    html += '<span class="material-symbols-outlined sec-arrow" style="font-size:18px;color:var(--md-sys-color-on-surface-variant)">chevron_right</span>';
+    html += '</div>';
+    html += '<div style="display:none;padding:6px 0 14px"><div style="font:var(--md-sys-typescale-body-small);line-height:1.7;color:var(--md-sys-color-on-surface-variant);background:var(--md-sys-color-surface-container);border:1px solid var(--md-sys-color-outline-variant);border-radius:var(--md-sys-shape-corner-m);padding:12px 16px">' + renderMd(reasoning) + '</div></div>';
+    html += '</div>';
+  }
+
+  // Response
+  const hasResp = response.trim().length > 0;
+  html += '<div style="border-bottom:1px solid var(--md-sys-color-outline-variant);padding:8px 0">';
+  html += '<div onclick="toggleChatSection(this)" style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;user-select:none">';
+  html += '<span style="width:28px;height:28px;border-radius:var(--md-sys-shape-corner-s);display:flex;align-items:center;justify-content:center;background:var(--md-sys-color-success-container);color:var(--md-sys-color-on-success);font-size:16px"><span class="material-symbols-outlined" style="font-size:16px">chat_bubble</span></span>';
+  html += '<span style="flex:1;font:var(--md-sys-typescale-label-medium);color:var(--md-sys-color-on-surface)">模型回答</span>';
+  html += '<span style="padding:1px 8px;border-radius:var(--md-sys-shape-corner-s);font:var(--md-sys-typescale-label-small);background:var(--md-sys-color-success-container);color:var(--md-sys-color-on-success)">' + (hasResp ? response.length + ' 字符' : '空') + '</span>';
+  html += '<span class="material-symbols-outlined sec-arrow' + (hasResp ? ' open' : '') + '" style="font-size:18px;color:var(--md-sys-color-on-surface-variant)">chevron_right</span>';
+  html += '</div>';
+  html += '<div style="' + (hasResp ? '' : 'display:none;') + 'padding:6px 0 14px">';
+  html += '<div style="font:var(--md-sys-typescale-body-medium);line-height:1.8;color:var(--md-sys-color-on-surface)">' + (hasResp ? renderMd(formatToolCalls(response)) : '<p style="color:var(--md-sys-color-on-surface-variant);font-style:italic">此请求无文本响应</p>') + '</div>';
+  html += '</div></div>';
+
+  // Raw
+  const hasRaw = rawContent.trim().length > 0;
+  html += '<div style="padding:8px 0">';
+  html += '<div onclick="toggleChatSection(this)" style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;user-select:none">';
+  html += '<span style="width:28px;height:28px;border-radius:var(--md-sys-shape-corner-s);display:flex;align-items:center;justify-content:center;background:var(--md-sys-color-secondary-container);color:var(--md-sys-color-on-secondary-container);font-size:16px"><span class="material-symbols-outlined" style="font-size:16px">terminal</span></span>';
+  html += '<span style="flex:1;font:var(--md-sys-typescale-label-medium);color:var(--md-sys-color-on-surface)">原始输出流</span>';
+  html += '<span style="padding:1px 8px;border-radius:var(--md-sys-shape-corner-s);font:var(--md-sys-typescale-label-small);background:var(--md-sys-color-secondary-container);color:var(--md-sys-color-on-secondary-container)">' + (hasRaw ? rawContent.length + ' 字符' : '无数据') + '</span>';
+  html += '<span class="material-symbols-outlined sec-arrow" style="font-size:18px;color:var(--md-sys-color-on-surface-variant)">chevron_right</span>';
+  html += '</div>';
+  const rawId = 'chat-raw-' + e.time.replace(/[^a-zA-Z0-9]/g, '');
+  html += '<div style="display:none;padding:6px 0 14px">';
+  html += '<button onclick="event.stopPropagation();copyChatText(this)" data-copy-target="' + rawId + '" style="display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 8px;border:none;background:transparent;color:var(--md-sys-color-primary);cursor:pointer;font-size:11px;font-family:inherit"><span class="material-symbols-outlined" style="font-size:14px">content_copy</span>复制</button>';
+  html += '<div style="background:var(--md-sys-color-surface-dim);border:1px solid var(--md-sys-color-outline-variant);border-radius:var(--md-sys-shape-corner-m);padding:12px 16px;font-family:\'Roboto Mono\',Consolas,monospace;font-size:12px;line-height:1.6;overflow-x:auto;white-space:pre-wrap;word-break:break-word;max-height:360px;overflow-y:auto" id="' + rawId + '">' + (hasRaw ? escHtml(rawContent) : '<span style="color:var(--md-sys-color-on-surface-variant);font-style:italic">无原始输出数据</span>') + '</div>';
+  html += '</div></div>';
+
+  html += '</div>';
+  return html;
+}
+
+function buildChatEntryCard(e, isRepairAgent) {
+  const title = extractChatTitle(e.messages, e);
+  const time = e.time ? formatChatTime(e.time).slice(11, 19) : '-';
+  const model = e.model || '-';
+  const dur = Number(e.duration) || 0;
+  const hasThink = !!e.reasoning;
+  const hasFiles = !!(e.uploadedFiles && e.uploadedFiles.length > 0);
+  const hasStream = !!e.stream;
+  const triggeredRepair = !isRepairAgent && !!e.repair;
+  const hasImages = !!(e.images && e.images.length > 0);
+
+  let badges = '';
+  if (hasStream) badges += '<span class="md3-chip small" style="background:var(--md-sys-color-secondary-container);color:var(--md-sys-color-on-secondary-container);border-color:transparent">stream</span>';
+  if (hasThink) badges += '<span class="md3-chip small" style="background:var(--md-sys-color-primary-container);color:var(--md-sys-color-on-primary-container);border-color:transparent">思考</span>';
+  if (hasFiles) badges += '<span class="md3-chip small" style="background:var(--md-sys-color-tertiary-container);color:var(--md-sys-color-on-tertiary-container);border-color:transparent">' + e.uploadedFiles.length + ' 文件</span>';
+  if (hasImages) badges += '<span class="md3-chip small" style="background:var(--md-sys-color-tertiary-container);color:var(--md-sys-color-on-tertiary-container);border-color:transparent">🖼️ ' + e.images.length + ' 张</span>';
+  if (triggeredRepair) badges += '<span class="md3-chip error small">触发修复</span>';
+
+  return '<div class="chat-entry-card" data-time="' + escHtml(e.time) + '" style="margin:8px 12px;background:var(--md-sys-color-surface-container-low);border:1px solid var(--md-sys-color-outline-variant);border-radius:var(--md-sys-shape-corner-m);overflow:hidden">' +
+    '<div onclick="toggleChatEntry(this)" style="padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:background .15s">' +
+    '<span style="font:var(--md-sys-typescale-label-small);color:var(--md-sys-color-on-surface-variant);white-space:nowrap">' + escHtml(time) + '</span>' +
+    '<span style="font:var(--md-sys-typescale-label-small);color:var(--md-sys-color-primary);background:var(--md-sys-color-primary-container);padding:1px 8px;border-radius:var(--md-sys-shape-corner-xs);white-space:nowrap">' + escHtml(model) + '</span>' +
+    '<span style="flex:1;min-width:0;font:var(--md-sys-typescale-body-small);color:var(--md-sys-color-on-surface);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + escHtml(title) + '">' + escHtml(title.slice(0, 80)) + '</span>' +
+    '<span style="display:flex;gap:4px;flex-shrink:0">' + badges + '</span>' +
+    '<span style="font:var(--md-sys-typescale-label-small);color:var(--md-sys-color-outline);white-space:nowrap;min-width:48px;text-align:right">' + dur + 'ms</span>' +
+    '</div>' +
+    '<div class="chat-entry-detail" data-time="' + escHtml(e.time) + '" style="display:none;border-top:1px solid var(--md-sys-color-outline-variant)"></div>' +
+    '</div>';
+}
+
+window.toggleChatEntry = function (summary) {
+  const card = summary.parentElement;
+  const detail = card.querySelector('.chat-entry-detail');
+  const isActive = detail.style.display !== 'none';
+  detail.style.display = isActive ? 'none' : 'block';
+  card.style.borderColor = isActive ? 'var(--md-sys-color-outline-variant)' : 'var(--md-sys-color-primary)';
+
+  // Lazy render detail content on first expand
+  if (!isActive && !detail.dataset.rendered) {
+    const time = detail.dataset.time;
+    const entry = chatCacheEntries.find(e => e.time === time);
+    if (entry) {
+      requestAnimationFrame(() => {
+        detail.innerHTML = buildChatEntryDetail(entry);
+        detail.dataset.rendered = '1';
+        requestAnimationFrame(() => {
+          detail.querySelectorAll('pre code:not(.hljs)').forEach(block => {
+            try { if (typeof hljs !== 'undefined') hljs.highlightElement(block); } catch {}
+          });
+        });
+      });
+    }
+  } else if (!isActive && detail.dataset.rendered) {
+    requestAnimationFrame(() => {
+      card.querySelectorAll('pre code:not(.hljs)').forEach(block => {
+        try { if (typeof hljs !== 'undefined') hljs.highlightElement(block); } catch {}
+      });
+    });
+  }
+};
+
+function buildChatColumn(listEl, entries, isRepairAgent) {
+  if (entries.length === 0) {
+    listEl.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:8px;color:var(--md-sys-color-on-surface-variant);padding:24px"><span class="material-symbols-outlined" style="font-size:32px">inbox</span><div style="font:var(--md-sys-typescale-label-large)">无记录</div></div>';
+    return;
+  }
+  listEl.innerHTML = '';
+  const frag = document.createDocumentFragment();
+  for (const e of entries) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = buildChatEntryCard(e, isRepairAgent);
+    const card = tmp.firstElementChild;
+    card.dataset.contentHash = hashChatEntry(e);
+    frag.appendChild(card);
+  }
+  listEl.appendChild(frag);
+}
+
+function renderChatAll(entries) {
+  const repairEntries = entries.filter(e => e.repairAgent);
+  const normalEntries = entries.filter(e => !e.repairAgent);
+
+  buildChatColumn($('chatRepairList'), repairEntries, true);
+  buildChatColumn($('chatNormalList'), normalEntries, false);
+
+  $('chatRepairColCount').textContent = repairEntries.length;
+  $('chatNormalColCount').textContent = normalEntries.length;
+  $('chatRepairCount').textContent = repairEntries.length;
+  $('chatNormalCount').textContent = normalEntries.length;
+
+  if (entries.length > 0) {
+    $('chatStatRepair').style.display = 'inline-flex';
+    $('chatStatNormal').style.display = 'inline-flex';
+  } else {
+    $('chatStatRepair').style.display = 'none';
+    $('chatStatNormal').style.display = 'none';
+  }
+}
+
+async function loadChatEntries(silent = false) {
+  if (chatIsLoading) return;
+  chatIsLoading = true;
+  const date = $('chatDateSelect').value;
+  if (!silent) {
+    $('chatRepairList').innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;padding:24px"><div class="spinner" style="width:28px;height:28px;border:3px solid var(--md-sys-color-outline-variant);border-top-color:var(--md-sys-color-primary);border-radius:50%;animation:spin .7s linear infinite"></div><span style="font:var(--md-sys-typescale-body-small);color:var(--md-sys-color-on-surface-variant)">加载中...</span></div>';
+    $('chatNormalList').innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;padding:24px"><div class="spinner" style="width:28px;height:28px;border:3px solid var(--md-sys-color-outline-variant);border-top-color:var(--md-sys-color-primary);border-radius:50%;animation:spin .7s linear infinite"></div><span style="font:var(--md-sys-typescale-body-small);color:var(--md-sys-color-on-surface-variant)">加载中...</span></div>';
+  }
+  try {
+    const url = date ? '/admin/api/logs/chats?date=' + date + '&count=10000' : '/admin/api/logs/chats?count=10000';
+    const res = await apiFetch(url);
+    const data = await res.json();
+    const entries = (data.chats || []).reverse();
+
+    if (silent) {
+      updateChatEntries(entries);
+    } else {
+      chatCacheEntries = entries;
+      renderChatAll(entries);
+      chatCardMap.clear();
+      document.querySelectorAll('#sec-chat .chat-entry-card').forEach(el => {
+        const time = el.dataset.time;
+        if (time) chatCardMap.set(time, el);
+      });
+    }
+  } catch (e) {
+    if (!silent) {
+      $('chatRepairList').innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:8px;padding:24px"><span class="material-symbols-outlined" style="font-size:32px;color:var(--md-sys-color-error)">error</span><div style="font:var(--md-sys-typescale-label-large)">加载失败</div></div>';
+      $('chatNormalList').innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:8px;padding:24px"><span class="material-symbols-outlined" style="font-size:32px;color:var(--md-sys-color-error)">error</span><div style="font:var(--md-sys-typescale-label-large)">加载失败</div></div>';
+    }
+  } finally {
+    chatIsLoading = false;
+  }
+}
+
+function updateChatEntries(newEntries) {
+  const oldMap = new Map(chatCacheEntries.map(e => [e.time, e]));
+  const newMap = new Map(newEntries.map(e => [e.time, e]));
+
+  const toRemove = [];
+  for (const [time, el] of chatCardMap) {
+    if (!newMap.has(time)) {
+      toRemove.push(time);
+      el.remove();
+    }
+  }
+  for (const time of toRemove) chatCardMap.delete(time);
+
+  for (const entry of newEntries) {
+    const existingEl = chatCardMap.get(entry.time);
+    const isRepairAgent = !!entry.repairAgent;
+    if (existingEl) {
+      const newHash = hashChatEntry(entry);
+      if (String(newHash) === existingEl.dataset.contentHash) continue;
+      const newCardHtml = buildChatEntryCard(entry, isRepairAgent);
+      const isActive = existingEl.querySelector('.chat-entry-detail')?.style.display !== 'none';
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = newCardHtml;
+      const newCard = tempDiv.firstElementChild;
+      newCard.dataset.contentHash = newHash;
+      if (isActive) {
+        newCard.querySelector('.chat-entry-detail').style.display = 'block';
+        newCard.style.borderColor = 'var(--md-sys-color-primary)';
+      }
+      existingEl.replaceWith(newCard);
+      chatCardMap.set(entry.time, newCard);
+    } else {
+      const newCardHtml = buildChatEntryCard(entry, isRepairAgent);
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = newCardHtml;
+      const newCard = tempDiv.firstElementChild;
+      newCard.dataset.contentHash = hashChatEntry(entry);
+      const list = entry.repairAgent ? $('chatRepairList') : $('chatNormalList');
+      let inserted = false;
+      for (const child of Array.from(list.children)) {
+        const childTime = child.dataset.time;
+        if (childTime && childTime < entry.time) {
+          list.insertBefore(newCard, child);
+          inserted = true;
+          break;
+        }
+      }
+      if (!inserted) list.appendChild(newCard);
+      chatCardMap.set(entry.time, newCard);
+    }
+  }
+
+  chatCacheEntries = newEntries;
+
+  if (newEntries.length === 0) {
+    chatCardMap.clear();
+    $('chatRepairList').innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:8px;padding:24px"><span class="material-symbols-outlined" style="font-size:32px;color:var(--md-sys-color-success)">check_circle</span><div style="font:var(--md-sys-typescale-label-large)">无修复调用</div><div style="font:var(--md-sys-typescale-body-small)">所有请求解析正常</div></div>';
+    $('chatNormalList').innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:8px;padding:24px"><span class="material-symbols-outlined" style="font-size:32px">inbox</span><div style="font:var(--md-sys-typescale-label-large)">无记录</div></div>';
+    $('chatRepairColCount').textContent = 0;
+    $('chatNormalColCount').textContent = 0;
+    $('chatRepairCount').textContent = 0;
+    $('chatNormalCount').textContent = 0;
+    $('chatStatRepair').style.display = 'none';
+    $('chatStatNormal').style.display = 'none';
+    return;
+  }
+
+  const repairEntries = newEntries.filter(e => e.repairAgent);
+  const normalEntries = newEntries.filter(e => !e.repairAgent);
+  $('chatRepairColCount').textContent = repairEntries.length;
+  $('chatNormalColCount').textContent = normalEntries.length;
+  $('chatRepairCount').textContent = repairEntries.length;
+  $('chatNormalCount').textContent = normalEntries.length;
+  $('chatStatRepair').style.display = 'inline-flex';
+  $('chatStatNormal').style.display = 'inline-flex';
+}
+
+function initChatSection() {
+  chatInitialized = true;
+  loadLogDatesForChat();
+  setTimeout(loadChatEntries, 100);
+
+  // Auto refresh
+  function startChatAutoRefresh() {
+    stopChatAutoRefresh();
+    if (!$('chatAutoRefreshCheck').checked) return;
+    const interval = parseInt($('chatRefreshIntervalInput').value, 10);
+    if (isNaN(interval) || interval < 1) { $('chatRefreshIntervalInput').value = 1; return; }
+    chatAutoRefreshTimer = setInterval(() => loadChatEntries(true), interval * 1000);
+  }
+
+  function stopChatAutoRefresh() {
+    if (chatAutoRefreshTimer) { clearInterval(chatAutoRefreshTimer); chatAutoRefreshTimer = null; }
+  }
+
+  $('chatAutoRefreshCheck').addEventListener('change', () => {
+    if ($('chatAutoRefreshCheck').checked) startChatAutoRefresh();
+    else stopChatAutoRefresh();
+  });
+
+  $('chatRefreshIntervalInput').addEventListener('input', () => {
+    let val = parseInt($('chatRefreshIntervalInput').value, 10);
+    if (isNaN(val) || val < 1) { $('chatRefreshIntervalInput').value = 1; val = 1; }
+    if ($('chatAutoRefreshCheck').checked) startChatAutoRefresh();
+  });
+
+  $('loadChatsBtn').addEventListener('click', () => loadChatEntries(false));
+
+  startChatAutoRefresh();
+}
+
+async function loadLogDatesForChat() {
+  try {
+    const res = await apiFetch('/admin/api/logs/dates');
+    if (!res.ok) return;
+    const data = await res.json();
+    const sel = $('chatDateSelect');
+    sel.innerHTML = '<option value="">今天</option>';
+    (data.dates || []).forEach(d => { const o = document.createElement('option'); o.value = d; o.textContent = d; sel.appendChild(o); });
+  } catch {}
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('#sec-chat .chat-entry-card').forEach(c => {
+      c.querySelector('.chat-entry-detail').style.display = 'none';
+      c.style.borderColor = 'var(--md-sys-color-outline-variant)';
+    });
+  }
+});
+
+// ── Tester Section ──
+let testerInitialized = false;
+let testerMessages = [];
+let testerImageData = '';
+
+function formatMessageTime() {
+  const d = new Date();
+  return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0') + ':' + String(d.getSeconds()).padStart(2,'0');
+}
+
+function renderTesterMessages() {
+  const container = $('testerMessages');
+  if (testerMessages.length === 0) {
+    container.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;gap:12px;color:var(--md-sys-color-on-surface-variant)"><span class="material-symbols-outlined" style="font-size:48px;opacity:0.3">forum</span><div style="font:var(--md-sys-typescale-label-large)">在下方输入消息开始测试</div></div>';
+    return;
+  }
+  let html = '';
+  testerMessages.forEach(msg => {
+    const isUser = msg.role === 'user';
+    const roleClass = isUser ? 'var(--md-sys-color-primary-container)' : 'var(--md-sys-color-success-container)';
+    const roleIcon = isUser ? 'person' : 'chat_bubble';
+    const roleLabel = isUser ? 'User' : 'Assistant';
+    html += '<div style="margin-bottom:16px">';
+    html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">';
+    html += '<span class="material-symbols-outlined" style="color:' + roleClass + '">' + roleIcon + '</span>';
+    html += '<span style="font:var(--md-sys-typescale-label-small);color:var(--md-sys-color-on-surface-variant)">' + roleLabel + '</span>';
+    html += '</div>';
+
+    // Thinking section for assistant
+    if (!isUser && msg.reasoning) {
+      html += '<div style="background:var(--md-sys-color-primary-container);border-radius:var(--md-sys-shape-corner-m);padding:12px 16px;margin-bottom:8px;border-left:3px solid var(--md-sys-color-primary)">';
+      html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;cursor:pointer" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display===\'none\'?\'block\':\'none\'">';
+      html += '<span class="material-symbols-outlined" style="font-size:16px;color:var(--md-sys-color-on-primary-container)">psychology</span>';
+      html += '<span style="font:var(--md-sys-typescale-label-small);color:var(--md-sys-color-on-primary-container)">思考过程</span>';
+      html += '<span style="font:var(--md-sys-typescale-label-small);color:var(--md-sys-color-on-primary-container);opacity:0.6">(' + msg.reasoning.length + ' 字符 · 点击展开/收起)</span>';
+      html += '</div>';
+      html += '<div style="display:block;font:var(--md-sys-typescale-body-small);line-height:1.7;color:var(--md-sys-color-on-primary-container);max-height:300px;overflow-y:auto;white-space:pre-wrap;word-break:break-word">' + escHtml(msg.reasoning) + '</div>';
+      html += '</div>';
+    }
+
+    html += '<div class="chat-md" style="background:var(--md-sys-color-surface-container);border-radius:var(--md-sys-shape-corner-m);padding:16px;white-space:pre-wrap;word-break:break-word">';
+    if (!isUser && msg.content) {
+      html += renderMd(msg.content);
+    } else {
+      html += escHtml(msg.content || '');
+    }
+    html += '</div>';
+    html += '</div>';
+  });
+  container.innerHTML = html;
+  container.scrollTop = container.scrollHeight;
+}
+
+async function loadTesterAccounts() {
+  try {
+    const res = await apiFetch('/admin/api/stats');
+    if (!res.ok) return;
+    const data = await res.json();
+    const sel = $('testerAccount');
+    const currentEmail = sel.value;
+    sel.innerHTML = '<option value="">自动选择</option>';
+    (data.pool || []).forEach(t => {
+      if (t.token && !t.dead) {
+        const email = t.email || ('Token: ' + t.token);
+        sel.appendChild(new Option(email, t.fullToken));
+      }
+    });
+    if (currentEmail && sel.querySelector('option[value="' + currentEmail + '"]')) {
+      sel.value = currentEmail;
+    }
+  } catch {}
+}
+
+async function loadTesterModels() {
+  try {
+    const res = await fetch('/v1/models');
+    if (!res.ok) return;
+    const data = await res.json();
+    const sel = $('testerModel');
+    const currentModel = sel.value;
+    sel.innerHTML = '';
+    (data.data || []).forEach(m => {
+      const opt = new Option(m.id, m.id);
+      if (m.id.includes('vision')) opt.style.color = 'var(--md-sys-color-tertiary)';
+      if (m.id.includes('pro')) opt.style.color = 'var(--md-sys-color-primary)';
+      sel.appendChild(opt);
+    });
+    if (currentModel && sel.querySelector('option[value="' + currentModel + '"]')) {
+      sel.value = currentModel;
+    }
+  } catch {}
+}
+
+async function sendTesterMessage() {
+  const input = $('testerInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  const model = $('testerModel').value;
+
+  // Add user message
+  testerMessages.push({ role: 'user', content: msg });
+  renderTesterMessages();
+  input.value = '';
+
+  $('testerStatus').textContent = '正在发送...';
+  $('testerStatus').className = 'md3-text-field';
+  $('testerSendBtn').disabled = true;
+
+  try {
+    const url = '/v1/chat/completions';
+    const body = {
+      model: model,
+      stream: true,
+      messages: [{ role: 'user', content: msg }]
+    };
+
+    if (testerImageData) {
+      body.messages[0].content = [
+        { type: 'text', text: msg },
+        { type: 'image_url', image_url: { url: testerImageData } }
+      ];
+    }
+
+    // Always use admin API key for proxy auth (GLM uses token pool, not per-account auth)
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + (sessionStorage.getItem('adminApiKey') || '')
+    };
+
+    const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || 'HTTP ' + res.status);
+    }
+
+    // Read stream
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let assistantContent = '';
+    let reasoningContent = '';
+    const assistantMsg = { role: 'assistant', content: '', reasoning: '' };
+    testerMessages.push(assistantMsg);
+    renderTesterMessages();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split('\n');
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+          if (data === '[DONE]') break;
+
+          try {
+            const json = JSON.parse(data);
+            const delta = json.choices[0]?.delta || {};
+            const content = delta.content || '';
+            const reasoning = delta.reasoning_content || '';
+            assistantContent += content;
+            reasoningContent += reasoning;
+            assistantMsg.content = assistantContent;
+            assistantMsg.reasoning = reasoningContent;
+            renderTesterMessages();
+          } catch {}
+        }
+      }
+    }
+
+    $('testerStatus').textContent = '发送完成';
+    setTimeout(() => { $('testerStatus').textContent = ''; }, 2000);
+  } catch (e) {
+    $('testerStatus').textContent = '错误: ' + e.message;
+    $('testerStatus').style.color = 'var(--md-sys-color-error)';
+    setTimeout(() => { $('testerStatus').textContent = ''; }, 3000);
+  } finally {
+    $('testerSendBtn').disabled = false;
+  }
+}
+
+window.initTesterSection = function() {
+  testerInitialized = true;
+  loadTesterAccounts();
+  loadTesterModels();
+
+  $('testerSendBtn').addEventListener('click', sendTesterMessage);
+  $('testerInput').addEventListener('keypress', e => { if (e.key === 'Enter') sendTesterMessage(); });
+  $('testerClearBtn').addEventListener('click', () => { testerMessages = []; renderTesterMessages(); $('testerStatus').textContent = '对话已清空'; });
+
+  $('testerUploadBtn').addEventListener('click', () => $('testerFileInput').click());
+  $('testerFileInput').addEventListener('change', async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      $('testerStatus').textContent = '仅支持图片文件';
+      setTimeout(() => { $('testerStatus').textContent = ''; }, 2000);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      testerImageData = reader.result;
+      $('testerImagePreview').style.display = 'block';
+      $('testerPreviewImg').src = testerImageData;
+      $('testerImageName').textContent = file.name;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  $('testerModel').addEventListener('change', loadTesterAccounts);
+  // Image generation
+  const generateImage = async () => {
+    const prompt = document.getElementById('imgPrompt').value.trim();
+    if (!prompt) { alert('请输入提示词'); return; }
+    const resultDiv = document.getElementById('imgResult');
+    resultDiv.innerHTML = '生成中...';
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const key = sessionStorage.getItem('adminApiKey');
+      if (key) headers['Authorization'] = 'Bearer ' + key;
+      const res = await fetch('/v1/images/generations', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ prompt, n: 1, model: 'cogview' })
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+      const urls = data.data.map(d => d.url);
+      if (urls.length === 0) throw new Error('No images returned');
+      resultDiv.innerHTML = urls.map(url => `<div style='display:flex;flex-direction:column;align-items:center;gap:4px'><img src='${url}' style='max-width:200px;max-height:200px;border-radius:var(--md-sys-shape-corner-m);border:1px solid var(--md-sys-color-outline-variant)'/><a href='${url}' target='_blank' style='font:var(--md-sys-typescale-label-small);color:var(--md-sys-color-primary)'>查看原图</a></div>`).join('');
+    } catch(e) {
+      resultDiv.innerHTML = `<span style='color:var(--md-sys-color-error)'>错误: ${e.message}</span>`;
+    }
+  };
+  document.getElementById('imgGenerateBtn').addEventListener('click', generateImage);
+  document.getElementById('imgPrompt').addEventListener('keypress', e => { if (e.key === 'Enter') generateImage(); });
+};
+
+// ── Settings Section ──
+let settingsLoaded = false;
+async function loadSettings() {
+  if (settingsLoaded) return;
+  settingsLoaded = true;
+  try {
+    const res = await apiFetch('/admin/api/settings');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const tbody = $('settingsBody');
+    tbody.innerHTML = data.settings.map(s =>
+      `<tr><td><code style="background:var(--md-sys-color-surface-container);padding:2px 8px;border-radius:4px;font-size:13px">${escHtml(s.key)}</code></td><td>${escHtml(s.value)}</td><td style="color:var(--md-sys-color-on-surface-variant)">${escHtml(s.desc)}</td></tr>`
+    ).join('');
+  } catch (e) {
+    $('settingsBody').innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--md-sys-color-error)">加载失败: ' + escHtml(e.message) + '</td></tr>';
+  }
+}
+
+// Init
+fetchStats();
+setupRefresh();
+loadLogDates();
+
+// Hidden interval control for refresh (keep compatible)
+const hiddenInterval = document.createElement('select');
+hiddenInterval.id = 'interval';
+hiddenInterval.style.display = 'none';
+hiddenInterval.innerHTML = '<option value="10000" selected>10s</option>';
+document.body.appendChild(hiddenInterval);
+hiddenInterval.addEventListener('change', setupRefresh);
+</script>
+</body>
+</html>

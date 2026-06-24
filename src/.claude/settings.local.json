@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --check index.js)",
+      "Bash(node --check anthropic.js)",
+      "Bash(node --check openai.js)",
+      "Bash(node --check tool_interceptor.js)",
+      "Bash(node --check session_context.js)",
+      "Bash(node --check chat.js)",
+      "Bash(node --check session.js)",
+      "Bash(node --check headers.js)",
+      "Bash(node --check auth.js)",
+      "Bash(node -e \"require\\('./index.js'\\)\")",
+      "Bash(timeout 8 node index.js)",
+      "Bash(timeout 10 node src/index.js)",
+      "Bash(timeout 8 node src/index.js)",
+      "Bash(taskkill /F /IM node.exe)",
+      "Bash(node --check dsml.js)",
+      "Bash(node --check logger.js)",
+      "Bash(node *)",
+      "Bash(netstat -ano)"
+    ]
+  }
+}

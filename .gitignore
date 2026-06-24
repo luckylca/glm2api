@@ -1,0 +1,37 @@
+node_modules/
+.env
+.pm2/
+__pycache__/
+*.png
+deploy.tar.gz
+42w-portal-patch/
+pow_js_worker.js
+pow_wasm_worker.js
+tmp_main.js
+tmp_js_worker.js
+tmp_wasm_worker.js
+
+# ops / scratch scripts (untracked, contain server & DB credentials)
+deploy.mjs
+deploy.py
+_probe_server.py
+add_channel.py
+check_newapi.py
+compare_tokens.py
+test_tokens.py
+fix_channel.py
+fix_network.py
+setup_final.py
+setup_newapi.py
+setup_newapi2.py
+verify_channel.py
+find_feature.py
+find_feature_endpoint*.py
+
+# junk filename leaked from a mangled path (contains non-ASCII char)
+*tmp_main.js
+CUsersPC-1glm2apitmp_main.js
+
+# logs
+logs/
+*.log
