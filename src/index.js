@@ -8,6 +8,7 @@ import { handleOpenAICompletion, handleOpenAIModels } from './openai.js';
 import { handleGLMCompletion } from './glm.js';
 import { handleAnthropicMessages, handleAnthropicModels, handleAnthropicCountTokens } from './anthropic.js';
 import { handleImageGeneration } from './image.js';
+import { handleOpenAIFileUpload, handleOpenAIFileRetrieve } from './files.js';
 import { getQueueInfo } from './queue.js';
 import { requestLogger, getRecentLogs, getLogStats, readHistoricalLogs, readChatLogs, listLogDates } from './logger.js';
 import { getMetrics, getTimeseries } from './metrics.js';
@@ -65,6 +66,8 @@ app.use((req, res, next) => {
 // OpenAI format
 app.post('/v1/chat/completions', handleOpenAICompletion);
 app.get('/v1/models', handleOpenAIModels);
+app.post('/v1/files', handleOpenAIFileUpload);
+app.get('/v1/files/:file_id', handleOpenAIFileRetrieve);
 
 // GLM native format (backward compatibility)
 app.post('/api/v0/chat/completion', handleGLMCompletion);

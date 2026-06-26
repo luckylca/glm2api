@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from 'crypto';
 import { basename } from 'path';
+import { getUploadedFileRecord } from './file_store.js';
 
 const SIGN_SECRET = '8a1317a7468aa3ad86e997d08f3f31cb';
 const BASE = 'https://chatglm.cn';
@@ -58,43 +59,74 @@ export async function getAccessToken(refreshToken) {
   throw new Error(`Token refresh failed: ${data.message || data.msg || JSON.stringify(data)}`);
 }
 
-// Extract image/file URLs from messages (OpenAI format)
-function extractFileUrlsFromMessages(messages) {
-  const urls = [];
+function normalizeGlmFileRef(file) {
+  if (!file?.file_id) return null;
+  return {
+    ...file,
+    file_name: file.file_name || 'upload.bin',
+  };
+}
+
+function base64ToBuffer(raw) {
+  return Buffer.from(raw, 'base64');
+}
+
+function decodeInlineFilePart(part) {
+  if (!part || typeof part !== 'object') return null;
+  const raw = part.file_data || part.base64 || part.data;
+  if (typeof raw !== 'string' || !raw.trim()) return null;
+
+  if (raw.startsWith('data:')) {
+    const [header, base64] = raw.split(',');
+    const mime = header.match(/:(.+?);/)?.[1] || 'application/octet-stream';
+    const ext = mime.split('/')[1] || 'bin';
+    return {
+      fileData: base64ToBuffer(base64),
+      filename: part.filename || part.file_name || `upload.${ext}`,
+      mimeType: part.mime_type || part.content_type || mime,
+    };
+  }
+
+  return {
+    fileData: base64ToBuffer(raw.trim()),
+    filename: part.filename || part.file_name || 'upload.bin',
+    mimeType: part.mime_type || part.content_type || 'application/octet-stream',
+  };
+}
+
+// Extract referenced/uploadable files from messages (OpenAI-ish format)
+function extractFileReferencesFromMessages(messages) {
+  const refs = [];
   for (const msg of messages) {
     if (msg.role === 'user' && Array.isArray(msg.content)) {
       for (const part of msg.content) {
         if (part.type === 'image_url' && part.image_url?.url) {
-          urls.push({ url: part.image_url.url, type: 'image' });
-        } else if (part.type === 'file' && part.file?.url) {
-          urls.push({ url: part.file.url, type: 'file' });
+          refs.push({ kind: 'url', url: part.image_url.url, type: 'image' });
+        } else if (part.type === 'file') {
+          if (Array.isArray(part.file)) {
+            for (const file of part.file) {
+              if (file?.file_id && file?.file_url) refs.push({ kind: 'glm', file: normalizeGlmFileRef(file), type: 'file' });
+            }
+          } else if (part.file?.url) {
+            refs.push({ kind: 'url', url: part.file.url, type: 'file' });
+          } else if (part.file?.file_id) {
+            refs.push({ kind: 'file_id', fileId: part.file.file_id, type: 'file' });
+          } else if (part.file?.file_id && part.file?.file_url) {
+            refs.push({ kind: 'glm', file: normalizeGlmFileRef(part.file), type: 'file' });
+          }
+        } else if (part.type === 'input_file' && part.file_id) {
+          refs.push({ kind: 'file_id', fileId: part.file_id, type: 'file' });
+        } else if (part.type === 'input_file') {
+          const decoded = decodeInlineFilePart(part);
+          if (decoded) refs.push({ kind: 'inline', ...decoded, type: 'file' });
         }
       }
     }
   }
-  return urls;
+  return refs;
 }
 
-// Upload a file to GLM
-async function uploadFile(fileUrl, accessToken) {
-  let fileData, filename, mimeType;
-  if (fileUrl.startsWith('data:')) {
-    // Data URL
-    const [header, base64] = fileUrl.split(',');
-    const mime = header.match(/:(.+?);/)[1];
-    const ext = mime.split('/')[1] || 'bin';
-    filename = `upload.${ext}`;
-    fileData = Buffer.from(base64, 'base64');
-    mimeType = mime;
-  } else {
-    // Regular URL
-    const resp = await fetch(fileUrl);
-    if (!resp.ok) throw new Error(`Failed to fetch file: ${resp.status}`);
-    filename = basename(new URL(fileUrl).pathname) || 'file';
-    fileData = Buffer.from(await resp.arrayBuffer());
-    mimeType = resp.headers.get('content-type') || 'application/octet-stream';
-  }
-
+export async function uploadFileData(fileData, filename, mimeType, accessToken) {
   const form = new FormData();
   const blob = new Blob([fileData], { type: mimeType });
   form.append('file', blob, filename);
@@ -121,6 +153,28 @@ async function uploadFile(fileUrl, accessToken) {
     throw new Error(`Upload failed: ${JSON.stringify(result)}`);
   }
   return result.result; // { file_id, file_url, width, height, file_name, file_size }
+}
+
+// Upload a file to GLM
+async function uploadFile(fileUrl, accessToken) {
+  let fileData, filename, mimeType;
+  if (fileUrl.startsWith('data:')) {
+    // Data URL
+    const [header, base64] = fileUrl.split(',');
+    const mime = header.match(/:(.+?);/)[1];
+    const ext = mime.split('/')[1] || 'bin';
+    filename = `upload.${ext}`;
+    fileData = Buffer.from(base64, 'base64');
+    mimeType = mime;
+  } else {
+    // Regular URL
+    const resp = await fetch(fileUrl);
+    if (!resp.ok) throw new Error(`Failed to fetch file: ${resp.status}`);
+    filename = basename(new URL(fileUrl).pathname) || 'file';
+    fileData = Buffer.from(await resp.arrayBuffer());
+    mimeType = resp.headers.get('content-type') || 'application/octet-stream';
+  }
+  return uploadFileData(fileData, filename, mimeType, accessToken);
 }
 
 // Build GLM-compatible messages with uploaded file references
@@ -191,15 +245,28 @@ export async function completion({ messages, prompt, thinkingEnabled = false, se
     chatMessages = [{ role: 'user', content: [{ type: 'text', text: prompt }] }];
   } else if (messages) {
     // Check for image/file references in messages
-    const fileUrls = extractFileUrlsFromMessages(messages);
-    if (fileUrls.length > 0) {
-      // Upload all files
-      for (const { url, type } of fileUrls) {
+    const fileRefs = extractFileReferencesFromMessages(messages);
+    if (fileRefs.length > 0) {
+      for (const ref of fileRefs) {
         try {
-          const fileInfo = await uploadFile(url, accessToken);
-          uploadedFiles.push(fileInfo);
+          if (ref.kind === 'url') {
+            const fileInfo = await uploadFile(ref.url, accessToken);
+            uploadedFiles.push(fileInfo);
+          } else if (ref.kind === 'inline') {
+            const fileInfo = await uploadFileData(ref.fileData, ref.filename, ref.mimeType, accessToken);
+            uploadedFiles.push(fileInfo);
+          } else if (ref.kind === 'file_id') {
+            const record = getUploadedFileRecord(ref.fileId);
+            if (!record?.glmFile) {
+              throw new Error(`Unknown file_id: ${ref.fileId}`);
+            }
+            uploadedFiles.push(record.glmFile);
+          } else if (ref.kind === 'glm' && ref.file) {
+            uploadedFiles.push(ref.file);
+          }
         } catch (err) {
-          console.error(`Failed to upload ${type} from ${url}:`, err.message);
+          const detail = ref.url || ref.fileId || ref.filename || ref.type;
+          console.error(`Failed to resolve ${ref.type} from ${detail}:`, err.message);
           throw new Error(`File upload failed: ${err.message}`);
         }
       }
@@ -276,7 +343,7 @@ export async function completion({ messages, prompt, thinkingEnabled = false, se
     throw new Error(`GLM API returned non-SSE response: ${text.substring(0, 300)}`);
   }
 
-  return { body: res.body, conversationId: null };
+  return { body: res.body, conversationId: null, uploadedFiles };
 }
 
 // Parse chatglm.cn SSE stream → standard events

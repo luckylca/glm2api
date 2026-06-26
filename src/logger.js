@@ -5,12 +5,15 @@
 import { appendFileSync, mkdirSync, readFileSync, readdirSync } from 'fs';
 import { join, resolve, relative } from 'path';
 import { recordRequest } from './metrics.js';
+import { getUploadedFileDisplay } from './file_store.js';
 
 const MEMORY_LIMIT = 1000;
 const recentLogs = [];
 let totalLogged = 0;
 let logDir = process.env.LOG_DIR || './logs';
 let serviceName = 'default';
+const INLINE_TEXT_LIMIT = 128 * 1024;
+const TEXT_LIKE_MIME_RE = /^(text\/|application\/(json|xml|javascript|x-javascript|typescript|x-typescript))/i;
 
 // Strict YYYY-MM-DD only. Anything else (e.g. "../../etc/passwd") falls back to
 // today, closing the path-traversal vector that flowed from req.query.date.
@@ -67,6 +70,218 @@ export function logChatEntry(entry) {
   writeChatLog(entry);
 }
 
+function truncateForLog(text) {
+  const value = String(text || '');
+  if (value.length <= INLINE_TEXT_LIMIT) return value;
+  return value.slice(0, INLINE_TEXT_LIMIT) + '\n...[truncated]';
+}
+
+function decodeBase64Utf8(raw) {
+  if (typeof raw !== 'string' || !raw.trim()) return '';
+  try {
+    return Buffer.from(raw.trim(), 'base64').toString('utf8');
+  } catch {
+    return '';
+  }
+}
+
+function extractInlineTextFromSource(source, fallbackName = '') {
+  if (!source || typeof source !== 'object') return '';
+  if (typeof source.text === 'string' && source.text) return truncateForLog(source.text);
+  if (typeof source.data === 'string') {
+    const mimeType = String(source.media_type || source.mime_type || '').toLowerCase();
+    const lowerName = String(fallbackName || source.filename || source.file_name || '').toLowerCase();
+    const looksTextByName = /\.(txt|md|markdown|json|js|ts|tsx|jsx|xml|yaml|yml|csv|log|py|java|go|rs|c|cc|cpp|h|hpp|html|css|sql)$/i.test(lowerName);
+    if (TEXT_LIKE_MIME_RE.test(mimeType) || looksTextByName) {
+      return truncateForLog(decodeBase64Utf8(source.data));
+    }
+  }
+  return '';
+}
+
+function buildDisplayFileEntry({ id = '', name = '', filename = '', bytes = 0, mimeType = '', content = '', source = '' } = {}) {
+  const resolvedName = name || filename || 'upload.bin';
+  return {
+    id,
+    name: resolvedName,
+    filename: resolvedName,
+    bytes,
+    mimeType,
+    content: truncateForLog(content),
+    source,
+  };
+}
+
+function normalizeMessageContentForLog(content) {
+  if (typeof content === 'string') return content;
+  if (!Array.isArray(content)) return JSON.stringify(content ?? '');
+
+  const parts = [];
+  for (const block of content) {
+    if (!block || typeof block !== 'object') continue;
+    switch (block.type) {
+      case 'text':
+        if (block.text) parts.push(block.text);
+        break;
+      case 'tool_use':
+        parts.push(`[TOOL USE: ${block.name || ''}]`);
+        if (block.input) parts.push(JSON.stringify(block.input));
+        break;
+      case 'tool_result': {
+        const resultContent = Array.isArray(block.content)
+          ? normalizeMessageContentForLog(block.content)
+          : (typeof block.content === 'string' ? block.content : JSON.stringify(block.content ?? ''));
+        parts.push(`[TOOL RESULT: ${block.tool_use_id || ''}]`);
+        if (resultContent) parts.push(resultContent);
+        break;
+      }
+      case 'document': {
+        const title = block.title || block.filename || 'document';
+        const body = extractInlineTextFromSource(block.source, title);
+        parts.push(`[FILE: ${title}]`);
+        if (body) parts.push(body);
+        break;
+      }
+      case 'file': {
+        const fileItems = Array.isArray(block.file) ? block.file : [block.file];
+        const stored = fileItems.map(item => item?.file_id ? getUploadedFileDisplay(item.file_id) : null).find(Boolean) || null;
+        const title = stored?.name || block.filename || block.name || block.file_name || fileItems.find(item => item?.file_name)?.file_name || 'file';
+        const body = stored?.content || extractInlineTextFromSource(block.source || block, title);
+        parts.push(`[FILE: ${title}]`);
+        if (body) parts.push(body);
+        break;
+      }
+      case 'input_file': {
+        const stored = block.file_id ? getUploadedFileDisplay(block.file_id) : null;
+        const title = stored?.name || block.filename || block.file_name || block.file_id || 'input_file';
+        const body = stored?.content || extractInlineTextFromSource(block.source || block, title);
+        parts.push(`[FILE: ${title}]`);
+        if (body) parts.push(body);
+        break;
+      }
+      case 'image':
+      case 'image_url':
+        parts.push('[Image]');
+        break;
+      default:
+        if (typeof block.text === 'string' && block.text) parts.push(block.text);
+        else parts.push(JSON.stringify(block));
+        break;
+    }
+  }
+  return parts.filter(Boolean).join('\n');
+}
+
+function normalizeMessagesForLog(messages) {
+  if (!Array.isArray(messages)) return messages;
+  return messages.map(msg => ({
+    ...msg,
+    content: normalizeMessageContentForLog(msg?.content),
+  }));
+}
+
+function extractUploadedFilesFromMessages(messages) {
+  if (!Array.isArray(messages)) return [];
+  const files = [];
+  for (const msg of messages) {
+    const content = Array.isArray(msg?.content) ? msg.content : [];
+    for (const block of content) {
+      if (!block || typeof block !== 'object') continue;
+      if (block.type === 'document') {
+        const title = block.title || block.filename || block.name || block.file_name || 'file';
+        const body = extractInlineTextFromSource(block.source || block, title);
+        files.push(buildDisplayFileEntry({
+          id: block.file_id || '',
+          name: title,
+          mimeType: block.source?.media_type || block.mime_type || '',
+          content: body,
+          source: 'request-block',
+        }));
+        continue;
+      }
+      if (block.type === 'input_file') {
+        const stored = block.file_id ? getUploadedFileDisplay(block.file_id) : null;
+        files.push(buildDisplayFileEntry({
+          id: block.file_id || stored?.id || '',
+          name: stored?.name || block.filename || block.file_name || 'input_file',
+          bytes: stored?.bytes || 0,
+          mimeType: stored?.mimeType || block.mime_type || '',
+          content: stored?.content || extractInlineTextFromSource(block.source || block, block.filename || block.file_name || ''),
+          source: stored ? 'stored-upload' : 'request-block',
+        }));
+        continue;
+      }
+      if (block.type === 'file') {
+        if (block.source) {
+          const title = block.filename || block.name || block.file_name || 'file';
+          const body = extractInlineTextFromSource(block.source || block, title);
+          files.push(buildDisplayFileEntry({
+            id: block.file_id || '',
+            name: title,
+            mimeType: block.source?.media_type || block.mime_type || '',
+            content: body,
+            source: 'request-block',
+          }));
+          continue;
+        }
+        const fileItems = Array.isArray(block.file) ? block.file : [block.file];
+        for (const item of fileItems) {
+          if (!item || typeof item !== 'object') continue;
+          const stored = item.file_id ? getUploadedFileDisplay(item.file_id) : null;
+          files.push(buildDisplayFileEntry({
+            id: item.file_id || stored?.id || '',
+            name: stored?.name || item.file_name || item.filename || 'file',
+            bytes: stored?.bytes || 0,
+            mimeType: stored?.mimeType || '',
+            content: stored?.content || '',
+            source: stored ? 'stored-upload' : 'request-file-ref',
+          }));
+        }
+      }
+    }
+  }
+  return files.filter(file => file.name || file.content);
+}
+
+function normalizeUploadedFilesForLog(messages, upstreamFiles) {
+  const merged = [];
+  const indexByKey = new Map();
+  const push = (file) => {
+    if (!file || typeof file !== 'object') return;
+    const key = `${file.id || ''}::${file.name || file.filename || ''}`;
+    const existingIndex = indexByKey.get(key);
+    if (existingIndex == null) {
+      indexByKey.set(key, merged.length);
+      merged.push(file);
+      return;
+    }
+    const existing = merged[existingIndex];
+    const existingScore = (existing.content ? 2 : 0) + (existing.mimeType ? 1 : 0);
+    const incomingScore = (file.content ? 2 : 0) + (file.mimeType ? 1 : 0);
+    if (incomingScore > existingScore) {
+      merged[existingIndex] = { ...existing, ...file };
+    }
+  };
+
+  for (const file of extractUploadedFilesFromMessages(messages)) push(file);
+
+  if (Array.isArray(upstreamFiles)) {
+    for (const file of upstreamFiles) {
+      const stored = file?.file_id ? getUploadedFileDisplay(file.file_id) : null;
+      push(buildDisplayFileEntry({
+        id: file?.file_id || stored?.id || '',
+        name: stored?.name || file?.file_name || file?.name || '',
+        bytes: stored?.bytes || file?.file_size || 0,
+        mimeType: stored?.mimeType || '',
+        content: stored?.content || '',
+        source: stored ? 'stored-upload' : 'upstream-upload',
+      }));
+    }
+  }
+
+  return merged;
+}
+
 export function requestLogger(name) {
   serviceName = name || serviceName;
   if (process.env.LOG_DIR) logDir = process.env.LOG_DIR;
@@ -76,6 +291,7 @@ export function requestLogger(name) {
     const isChat = req.path === '/v1/chat/completions' || req.path === '/api/v0/chat/completion'
       || req.path === '/anthropic/v1/messages' || req.path === '/v1/messages' || req.path === '/messages';
     const messages = req.body?.messages || null;
+    const displayMessages = normalizeMessagesForLog(messages);
     const model = req.body?.model || '-';
     const stream = req.body?.stream || false;
 
@@ -220,12 +436,12 @@ export function requestLogger(name) {
           model,
           stream,
           duration,
-          messages,
+          messages: displayMessages,
           prompt,
           response: assistantContent,
           reasoning: reasoningContent || undefined,
           raw: res.locals?.chatRawContent || undefined,
-          uploadedFiles: res.locals?.chatUploadedFiles || undefined,
+          uploadedFiles: normalizeUploadedFilesForLog(messages, res.locals?.chatUploadedFiles),
           repair: res.locals?.chatRepair || undefined,
         });
       }

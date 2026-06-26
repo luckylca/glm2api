@@ -1,8 +1,17 @@
-import { completion, parseSSEStream } from './chat.js';
+﻿import { completion, parseSSEStream } from './chat.js';
 import { enqueueRequest, dispatchQueued } from './queue.js';
 import { recordTTFB, recordTokenSpeed } from './metrics.js';
-import { buildPrompt, detectJsonTask } from './dsml.js';
+import {
+  buildPrompt,
+  buildPointerPrompt,
+  detectJsonTask,
+  buildHistoryContextFile,
+  buildToolsContextFile,
+  CONTEXT_HISTORY_FILENAME,
+  CONTEXT_TOOLS_FILENAME,
+} from './dsml.js';
 import { extractToolCallsUnified, normalizeRepairedCalls, repairBrokenOutput } from './tool_interceptor.js';
+import { uploadFileData } from './chat.js';
 
 function tryParseJson(value) {
   try { return JSON.parse(value); } catch { return null; }
@@ -60,6 +69,28 @@ function resolveToolChoice(toolChoice) {
   return 'auto';
 }
 
+function countConversationMessages(messages) {
+  return messages.filter(msg => msg?.role && msg.role !== 'system').length;
+}
+
+function shouldUseContextFiles(messages, tools) {
+  if (tools.length > 0) return true;
+  return countConversationMessages(messages) > 1;
+}
+
+function collectNonTextRichParts(messages) {
+  const parts = [];
+  for (const msg of messages) {
+    if (!Array.isArray(msg?.content)) continue;
+    for (const part of msg.content) {
+      if (part?.type && part.type !== 'text') {
+        parts.push(part);
+      }
+    }
+  }
+  return parts;
+}
+
 // Stream parsed tool_calls incrementally per the OpenAI streaming protocol
 const ARGS_CHUNK_SIZE = 24;
 function streamToolCallsIncremental(res, writeOpts, toolCalls) {
@@ -100,24 +131,107 @@ export async function handleOpenAICompletion(req, res) {
   try {
     slot = await enqueueRequest(false);
 
-    // Check if any message contains image_url
-    function hasImageUrl(msgs) {
-      for (const m of msgs) {
-        if (Array.isArray(m.content)) {
-          for (const p of m.content) {
-            if (p.type === 'image_url') return true;
-          }
-        }
-      }
-      return false;
-    }
-
-    const hasImage = hasImageUrl(messages);
+    // Check if any message contains non-text rich content that must go through
+    // GLM's file/image message path instead of prompt flattening.
+    const richParts = collectNonTextRichParts(messages);
+    const hasRichContent = richParts.length > 0;
     let result;
-    if (hasImage) {
-      res.locals.chatPrompt = JSON.stringify(messages);
-      console.log(`[openai] model=${model} multimodal request`);
-      result = await completion({ messages, accessToken: slot.token, deviceId: slot.deviceId, thinkingEnabled });
+    if (hasRichContent) {
+      try {
+        const historyText = buildHistoryContextFile(messages);
+        const toolsText = buildToolsContextFile(tools, toolChoice);
+        const promptNeedsContextFiles = shouldUseContextFiles(messages, tools);
+        const attachedFiles = [];
+
+        if (promptNeedsContextFiles && historyText.trim()) {
+          const historyFile = await uploadFileData(Buffer.from(historyText, 'utf8'), CONTEXT_HISTORY_FILENAME, 'text/plain; charset=utf-8', slot.token);
+          attachedFiles.push(historyFile);
+        }
+        if (promptNeedsContextFiles && toolsText.trim()) {
+          const toolsFile = await uploadFileData(Buffer.from(toolsText, 'utf8'), CONTEXT_TOOLS_FILENAME, 'text/plain; charset=utf-8', slot.token);
+          attachedFiles.push(toolsFile);
+        }
+
+        const promptWithAttachments = buildPointerPrompt({
+          messages,
+          tools,
+          toolChoice,
+          thinkingEnabled,
+          isJsonTask,
+          hasHistoryFile: attachedFiles.some(file => file.file_name === CONTEXT_HISTORY_FILENAME),
+          hasToolsFile: attachedFiles.some(file => file.file_name === CONTEXT_TOOLS_FILENAME),
+        });
+
+        const richPromptMessages = [{
+          role: 'user',
+          content: [
+            { type: 'text', text: promptWithAttachments },
+            ...richParts,
+            ...(attachedFiles.length > 0 ? [{ type: 'file', file: attachedFiles }] : []),
+          ],
+        }];
+
+        res.locals.chatPrompt = promptWithAttachments;
+        res.locals.chatUploadedFiles = attachedFiles;
+        console.log(`[openai] model=${model} multimodal+prompt richParts=${richParts.length} history=${attachedFiles.some(file => file.file_name === CONTEXT_HISTORY_FILENAME)} tools=${attachedFiles.some(file => file.file_name === CONTEXT_TOOLS_FILENAME)}`);
+        result = await completion({ messages: richPromptMessages, accessToken: slot.token, deviceId: slot.deviceId, thinkingEnabled });
+      } catch (err) {
+        const fallbackPrompt = buildPrompt({ messages, tools, toolChoice, thinkingEnabled, isJsonTask });
+        const fallbackMessages = [{
+          role: 'user',
+          content: [
+            { type: 'text', text: fallbackPrompt },
+            ...richParts,
+          ],
+        }];
+        res.locals.chatPrompt = fallbackPrompt;
+        console.warn(`[openai] multimodal prompt mode failed, falling back without context files: ${err.message}`);
+        result = await completion({ messages: fallbackMessages, accessToken: slot.token, deviceId: slot.deviceId, thinkingEnabled });
+      }
+      res.locals.chatUploadedFiles = result.uploadedFiles || undefined;
+    } else if (shouldUseContextFiles(messages, tools)) {
+      try {
+        const historyText = buildHistoryContextFile(messages);
+        const toolsText = buildToolsContextFile(tools, toolChoice);
+        const attachedFiles = [];
+
+        if (historyText.trim()) {
+          const historyFile = await uploadFileData(Buffer.from(historyText, 'utf8'), CONTEXT_HISTORY_FILENAME, 'text/plain; charset=utf-8', slot.token);
+          attachedFiles.push(historyFile);
+        }
+        if (toolsText.trim()) {
+          const toolsFile = await uploadFileData(Buffer.from(toolsText, 'utf8'), CONTEXT_TOOLS_FILENAME, 'text/plain; charset=utf-8', slot.token);
+          attachedFiles.push(toolsFile);
+        }
+
+        const promptWithAttachments = buildPointerPrompt({
+          messages,
+          tools,
+          toolChoice,
+          thinkingEnabled,
+          isJsonTask,
+          hasHistoryFile: attachedFiles.some(file => file.file_name === CONTEXT_HISTORY_FILENAME),
+          hasToolsFile: attachedFiles.some(file => file.file_name === CONTEXT_TOOLS_FILENAME),
+        });
+
+        const pointerMessages = [{
+          role: 'user',
+          content: [
+            { type: 'text', text: promptWithAttachments },
+            ...(attachedFiles.length > 0 ? [{ type: 'file', file: attachedFiles }] : []),
+          ],
+        }];
+
+        res.locals.chatPrompt = promptWithAttachments;
+        res.locals.chatUploadedFiles = attachedFiles;
+        console.log(`[openai] model=${model} prompt+context-files history=${historyText.trim().length > 0} tools=${toolsText.trim().length > 0}`);
+        result = await completion({ messages: pointerMessages, accessToken: slot.token, deviceId: slot.deviceId, thinkingEnabled });
+      } catch (err) {
+        const prompt = buildPrompt({ messages, tools, toolChoice, thinkingEnabled, isJsonTask });
+        res.locals.chatPrompt = prompt;
+        console.warn(`[openai] context-file mode failed, falling back to inline prompt: ${err.message}`);
+        result = await completion({ prompt, accessToken: slot.token, deviceId: slot.deviceId, thinkingEnabled });
+      }
     } else {
       const prompt = buildPrompt({ messages, tools, toolChoice, thinkingEnabled, isJsonTask });
       res.locals.chatPrompt = prompt;
@@ -166,17 +280,7 @@ export async function handleOpenAICompletion(req, res) {
               recordTTFB(model, firstChunkTime - requestStart);
             }
             fullRaw += event.content;
-            if (toolCallingEnabled) {
-              contentBuffer += event.content;
-              continue;
-            }
-            writeSSE(res, {
-              id: requestId,
-              object: 'chat.completion.chunk',
-              created: Math.floor(Date.now() / 1000),
-              model,
-              choices: [{ index: 0, delta: { content: event.content }, finish_reason: null }],
-            });
+            contentBuffer += event.content;
           } else if (event.type === 'thinking') {
             writeSSE(res, {
               id: requestId,
@@ -194,24 +298,22 @@ export async function handleOpenAICompletion(req, res) {
             };
 
             let parsedToolCalls = null;
-            if (toolCallingEnabled) {
-              let extracted = extractToolCallsUnified(contentBuffer);
-              if (!extracted && contentBuffer) {
-                console.log(`[repair] Streaming parse failed on ${contentBuffer.length} chars — calling repair agent`);
-                res.locals.chatRepair = true;
-                const repairedContent = await repairBrokenOutput(contentBuffer, slot);
-                if (repairedContent) {
-                  extracted = extractToolCallsUnified(repairedContent);
-                  if (extracted) console.log(`[repair] Repair succeeded`);
-                }
+            let extracted = extractToolCallsUnified(contentBuffer);
+            if (!extracted && contentBuffer) {
+              console.log(`[repair] Streaming parse failed on ${contentBuffer.length} chars 鈥?calling repair agent`);
+              res.locals.chatRepair = true;
+              const repairedContent = await repairBrokenOutput(contentBuffer, slot);
+              if (repairedContent) {
+                extracted = extractToolCallsUnified(repairedContent);
+                if (extracted) console.log(`[repair] Repair succeeded`);
               }
-              if (!extracted && contentBuffer) {
-                console.log(`[safety-net] Extraction + repair both failed — wrapping raw output as Speak`);
-                extracted = { toolCalls: [], content: contentBuffer };
-              }
-              if (extracted) {
-                parsedToolCalls = { toolCalls: toOpenAIToolCalls(extracted.toolCalls), content: extracted.content };
-              }
+            }
+            if (!extracted && contentBuffer) {
+              console.log(`[safety-net] Extraction + repair both failed 鈥?wrapping raw output as Speak`);
+              extracted = { toolCalls: [], content: contentBuffer };
+            }
+            if (extracted) {
+              parsedToolCalls = { toolCalls: toOpenAIToolCalls(extracted.toolCalls), content: extracted.content };
             }
 
             if (parsedToolCalls?.toolCalls?.length) {
@@ -232,7 +334,7 @@ export async function handleOpenAICompletion(req, res) {
                   ...writeOpts,
                   choices: [{ index: 0, delta: { content: parsedToolCalls.content }, finish_reason: null }],
                 });
-              } else if (toolCallingEnabled && contentBuffer) {
+              } else if (contentBuffer) {
                 writeSSE(res, {
                   ...writeOpts,
                   choices: [{ index: 0, delta: { content: contentBuffer }, finish_reason: null }],
@@ -272,9 +374,9 @@ export async function handleOpenAICompletion(req, res) {
         recordTTFB(model, totalDuration);
         if (totalDuration > 0) recordTokenSpeed(model, fullContent.length + fullThinking.length, totalDuration);
 
-        let extracted = toolCallingEnabled ? extractToolCallsUnified(fullContent) : null;
-        if (!extracted && toolCallingEnabled && fullContent) {
-          console.log(`[repair] Non-stream parse failed on ${fullContent.length} chars — calling repair agent`);
+        let extracted = extractToolCallsUnified(fullContent);
+        if (!extracted && fullContent) {
+          console.log(`[repair] Non-stream parse failed on ${fullContent.length} chars 鈥?calling repair agent`);
           res.locals.chatRepair = true;
           const repairedContent = await repairBrokenOutput(fullContent, slot);
           if (repairedContent) {
@@ -282,8 +384,8 @@ export async function handleOpenAICompletion(req, res) {
             if (extracted) console.log(`[repair] Repair succeeded`);
           }
         }
-        if (!extracted && toolCallingEnabled && fullContent) {
-          console.log(`[safety-net] Extraction + repair both failed — wrapping raw output as Speak`);
+        if (!extracted && fullContent) {
+          console.log(`[safety-net] Extraction + repair both failed 鈥?wrapping raw output as Speak`);
           extracted = { toolCalls: [], content: fullContent };
         }
         const parsedToolCalls = extracted
@@ -348,3 +450,4 @@ export function handleOpenAIModels(req, res) {
     })),
   });
 }
+

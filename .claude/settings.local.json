@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(xargs grep -l \"3\\\\.0\\\\.0\")",
-      "Bash(curl -s http://localhost:3099/healthz)"
-    ]
-  }
-}

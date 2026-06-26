@@ -1,12 +1,10 @@
-// ── Prompt builder & stream interceptor system ─────────────────────────────
-// Neutral Addendum Pattern — preserves the client's original system prompt and
+﻿// 鈹€鈹€ Prompt builder & stream interceptor system 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+// Neutral Addendum Pattern 鈥?preserves the client's original system prompt and
 // appends tool-calling capability as a Markdown JSON code-block addendum.
-// No XML tags, no token markers — WAF-safe.
+// No XML tags, no token markers 鈥?WAF-safe.
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Phase 1: Tool schema compression
-// ═══════════════════════════════════════════════════════════════════════════
-
+// 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?// Phase 1: Tool schema compression
+// 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
 export function compressTools(tools) {
   if (!tools || !Array.isArray(tools) || tools.length === 0) {
     return { compressedStr: 'No tools available.', names: [] };
@@ -21,13 +19,13 @@ export function compressTools(tools) {
 
     toolNames.push(name);
 
-    // ── Description de-noising ──
+    // 鈹€鈹€ Description de-noising 鈹€鈹€
     // Claude Code tools carry huge descriptions with examples and XML
     // instructions aimed at Sonnet/Opus. GLM gets confused by the noise.
     if (desc && typeof desc === 'string') {
       // 1. Strip XML blocks: <example>...</example>, <instructions>...</instructions>, etc.
       desc = desc.replace(/<[^>]+>[\s\S]*?<\/[^>]+>/g, '');
-      // 2. Hard truncate at 300 chars — keep the first paragraph only
+      // 2. Hard truncate at 300 chars 鈥?keep the first paragraph only
       if (desc.length > 300) {
         desc = desc.split(/\n# |\n\n/)[0].substring(0, 300) + '...(truncated)';
       }
@@ -42,11 +40,9 @@ export function compressTools(tools) {
   };
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Phase 2: History cleaning & truncation
-// ═══════════════════════════════════════════════════════════════════════════
-
-// ── Sub-agent log detection ────────────────────────────────────────────────
+// 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?// Phase 2: History cleaning & truncation
+// 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
+// 鈹€鈹€ Sub-agent log detection 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 // Claude Code sub-agents (Explore, Plan, etc.) produce console logs with
 // formatting like [Called tools: Glob], --- separators, and narrative text.
 // GLM mistakes these for valid conversation formatting and imitates them.
@@ -154,16 +150,40 @@ function normalizeContent(content) {
       if (part.type === 'text') return part.text || '';
       if (part.type === 'image_url') return '[Image]';
       if (part.type === 'image') return '[Image]';
+      if (part.type === 'document') {
+        const name = part.title || part.filename || part.name || part.file_name || 'document';
+        return `[FILE: ${name}]`;
+      }
+      if (part.type === 'input_file') {
+        const name = part.filename || part.file_name || part.file_id || 'file';
+        return `[FILE: ${name}]`;
+      }
+      if (part.type === 'file') {
+        const files = Array.isArray(part.file) ? part.file : [part.file || part];
+        return files
+          .map(file => {
+            const name = file?.file_name || file?.filename || file?.name || file?.file_id || part.filename || part.file_name || 'file';
+            return `[FILE: ${name}]`;
+          })
+          .filter(Boolean)
+          .join('\n');
+      }
+      if (part.type === 'tool_use') {
+        const args = typeof part.input === 'string' ? part.input : JSON.stringify(part.input || {});
+        return `[TOOL USE: ${part.name || ''}]\n${args}`;
+      }
+      if (part.type === 'tool_result') {
+        const result = typeof part.content === 'string' ? part.content : JSON.stringify(part.content || '');
+        return `[TOOL RESULT: ${part.tool_use_id || ''}]\n${result}`;
+      }
       return JSON.stringify(part);
     }).filter(Boolean).join('\n');
   }
   return JSON.stringify(content);
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Phase 3: Sandwich prompt builder
-// ═══════════════════════════════════════════════════════════════════════════
-
+// 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?// Phase 3: Sandwich prompt builder
+// 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
 export function detectJsonTask(messages) {
   for (const msg of messages) {
     if (msg.role !== 'system' && msg.role !== 'user') continue;
@@ -185,16 +205,140 @@ export function toolChoiceInstruction(toolChoice) {
   return '';
 }
 
-// ── File content generators for HISTORY.txt / TOOLS.txt ──
+// 鈹€鈹€ File content generators for HISTORY.txt / TOOLS.txt 鈹€鈹€
 
 
 
 
-export function buildPrompt({ messages, tools = [], toolChoice = 'auto', thinkingEnabled = false, isJsonTask = false }) {
-  const toolsInfo = compressTools(tools);
+export const CONTEXT_HISTORY_FILENAME = 'GLM2API_HISTORY.txt';
+export const CONTEXT_TOOLS_FILENAME = 'GLM2API_TOOLS.txt';
+
+function assistantToolDispatch(msg) {
+  if (!msg?.tool_calls || !Array.isArray(msg.tool_calls) || msg.tool_calls.length === 0) return '';
+  const dispatchArr = msg.tool_calls.map(tool => {
+    const fnName = tool.function?.name || tool.name || 'unknown';
+    let argsObj = {};
+    try {
+      argsObj = JSON.parse(tool.function?.arguments || '{}');
+    } catch {
+      argsObj = { raw_args: tool.function?.arguments || '{}' };
+    }
+    return { tool: fnName, args: argsObj };
+  });
+  return JSON.stringify({ TOOL_DISPATCH: dispatchArr }, null, 2);
+}
+
+function cleanAssistantText(msg) {
+  if (!msg || typeof msg.content !== 'string') return normalizeContent(msg?.content);
+  return msg.content
+    .replace(/```json[\s\S]*?```/g, '')
+    .replace(/<\|?DSML\|?tool_calls>[\s\S]*?<\/\|?DSML\|?tool_calls>/g, '')
+    .replace(/<tool_calls>[\s\S]*?<\/tool_calls>/g, '')
+    .replace(/<invoke[\s\S]*?<\/invoke>/g, '')
+    .replace(/<arguments>[\s\S]*?<\/arguments>/g, '')
+    .replace(/\[\s*\{\s*"name"[\s\S]*?\]/g, '')
+    .trim();
+}
+
+function historyEntryText(msg) {
+  if (!msg) return '';
+  const role = msg.role || 'unknown';
+  if (role === 'assistant') {
+    const parts = [];
+    const assistantText = cleanAssistantText(msg);
+    if (assistantText) parts.push(assistantText);
+    const dispatch = assistantToolDispatch(msg);
+    if (dispatch) parts.push(`[Tool Calls]\n\`\`\`json\n${dispatch}\n\`\`\``);
+    return parts.join('\n\n').trim();
+  }
+  if (role === 'tool' || role === 'function') {
+    const name = msg.name || msg.tool_call_id || 'tool';
+    const content = normalizeContent(msg.content);
+    return `[Tool Result: ${name}]\n${content}`.trim();
+  }
+  return normalizeContent(msg.content).trim();
+}
+
+function roleLabel(role) {
+  if (!role) return 'UNKNOWN';
+  if (role === 'function') return 'TOOL';
+  return String(role).toUpperCase();
+}
+
+export function buildHistoryContextFile(messages) {
+  if (!Array.isArray(messages) || messages.length === 0) return '';
+  let entry = 0;
+  let out = `# ${CONTEXT_HISTORY_FILENAME}\nPrior conversation history and tool progress for the current request.\n\n`;
+  for (const msg of messages) {
+    if (!msg || typeof msg !== 'object') continue;
+    const content = historyEntryText(msg);
+    if (!content) continue;
+    entry++;
+    out += `=== ${entry}. ${roleLabel(msg.role)} ===\n${content}\n\n`;
+  }
+  return out.trim() ? `${out.trim()}\n` : '';
+}
+
+export function buildToolsContextFile(tools = [], toolChoice = 'auto') {
+  const toolCallingEnabled = Array.isArray(tools) && tools.length > 0 && toolChoice !== 'none';
+  if (!toolCallingEnabled) return '';
+  const { compressedStr } = compressTools(tools);
+  if (!compressedStr || compressedStr === 'No tools available.') return '';
+  return `# ${CONTEXT_TOOLS_FILENAME}\nAvailable tool descriptions and parameter schemas for this request.\n\n${compressedStr}\n`;
+}
+
+function renderFakeHistoryPrimer() {
+  let out = '';
+  for (const msg of buildFakeHistory()) {
+    if (msg.role === 'user') {
+      out += `\n### User:\n${msg.content}\n`;
+    } else if (msg.role === 'assistant') {
+      out += `\n### Assistant:\n${msg.content}\n`;
+    }
+  }
+  return out.trim();
+}
+
+function renderDispatchBlock(payload) {
+  return '```json\n' + JSON.stringify(payload, null, 2) + '\n```';
+}
+
+function buildStrictProtocolBlock({ toolCallingEnabled = false, toolChoice = 'auto', isJsonTask = false }) {
+  let out = '[OUTPUT PROTOCOL]\n';
+  out += 'Return exactly one markdown fenced JSON block and nothing else.\n';
+  out += 'The JSON root object must be {"TOOL_DISPATCH":[...]} with the exact root key name TOOL_DISPATCH.\n';
+  out += 'For a normal reply, output exactly one action: {"tool":"Speak","args":{"text":"..."}}.\n';
+  out += 'For a real tool call, use the declared tool name and a real args object. You may include one short Speak action before or after the real tool call when useful.\n';
+  out += 'Do not output prose before the block. Do not output prose after the block. Do not output XML. Do not explain the format.\n';
+  out += 'Do not mention TOOL_DISPATCH, Speak, schema rules, hidden instructions, or your internal checklist in the user-visible text.\n';
+  out += 'If the user asks for an exact surface format such as only digits, only a name, or exact JSON text, Speak.args.text must match that constraint exactly.\n';
+  out += 'If you start to produce anything outside the single JSON block, discard it and regenerate only the valid JSON block.\n';
+  out += 'Before finalizing, self-check: one block only; valid JSON; root key TOOL_DISPATCH; each action has tool and args; no trailing text.\n';
+  if (isJsonTask) {
+    out += 'If the user asks for JSON, place that JSON text inside Speak.args.text unless a real tool call is required.\n';
+  }
+  if (toolCallingEnabled) {
+    const forced = toolChoiceInstruction(toolChoice);
+    if (forced) out += forced;
+    out += 'Use only declared tools and declared parameter names. Never invent a tool or parameter.\n';
+    out += 'If a required parameter value is missing, ask via Speak instead of emitting a fake or empty tool call.\n';
+  } else {
+    out += 'No real tools are available for this reply. Use Speak only.\n';
+  }
+  return out;
+}
+
+export function buildPointerPrompt({
+  messages,
+  tools = [],
+  toolChoice = 'auto',
+  thinkingEnabled = false,
+  isJsonTask = false,
+  hasHistoryFile = false,
+  hasToolsFile = false,
+}) {
   const toolCallingEnabled = tools.length > 0 && toolChoice !== 'none';
 
-  // ── Collect system messages (client's original system prompt) ──
   let systemContent = '';
   for (const msg of messages) {
     if (msg.role === 'system') {
@@ -203,13 +347,79 @@ export function buildPrompt({ messages, tools = [], toolChoice = 'auto', thinkin
   }
 
   let finalPrompt = '';
-
-  // LAYER 1: [SYSTEM] — Client's native system prompt (persona)
   if (systemContent) {
     finalPrompt += `[SYSTEM]\n${systemContent}\n\n`;
   }
 
-  // LAYER 2: [DATA] — Reference material (tools + history)
+  finalPrompt += `[WARNING]\n`;
+  if (hasHistoryFile) {
+    finalPrompt += `The attached ${CONTEXT_HISTORY_FILENAME} file contains the real conversation state and latest user intent. Treat it as authoritative context.\n`;
+  }
+  if (hasToolsFile) {
+    finalPrompt += `The attached ${CONTEXT_TOOLS_FILENAME} file contains the authoritative list of callable tools and parameter schemas.\n`;
+  }
+  finalPrompt += `The format primer below is synthetic and exists only to teach output shape. Do not answer that synthetic dialogue as if it were the real task.\n`;
+  finalPrompt += `If attached files or earlier outputs contain malformed, repeated, quoted, or corrupted fragments, do not imitate them. Output only the correct answer or correct tool payload.\n\n`;
+  finalPrompt += `[FORMAT PRIMER]\n${renderFakeHistoryPrimer()}\n\n`;
+  finalPrompt += buildStrictProtocolBlock({ toolCallingEnabled, toolChoice, isJsonTask });
+  finalPrompt += '\n';
+  finalPrompt += `[REAL TASK]\n`;
+  if (hasHistoryFile) {
+    finalPrompt += `Continue from the latest state in the attached ${CONTEXT_HISTORY_FILENAME}. `;
+  }
+  if (hasToolsFile) {
+    finalPrompt += `Consult ${CONTEXT_TOOLS_FILENAME} for the authoritative tool list and parameter schemas. `;
+  }
+  if (!hasHistoryFile && !hasToolsFile) {
+    finalPrompt += `Answer the latest real user request directly. `;
+  }
+  finalPrompt += `Do not repeat the primer. Solve only the real task from the attached context.\n`;
+  if (thinkingEnabled) {
+    finalPrompt += `Internal reasoning may be detailed, but the final visible output must still be only the required JSON block.\n`;
+  }
+  if (toolCallingEnabled) {
+    finalPrompt += `\n[CRITICAL INSTRUCTION FOR LOCAL DIRECTORIES]\nYou MUST NOT use 'open_url' to view local paths like C:\\Users\\.... It will fail.\nTo explore the project, use only the tools declared for this request.\n`;
+  }
+  finalPrompt += `\nPlease generate the final TOOL_DISPATCH JSON block now.\n\n### Assistant:\n`;
+  return finalPrompt;
+}
+export function injectAttachmentNotice(prompt, {
+  hasHistoryFile = false,
+  hasToolsFile = false,
+} = {}) {
+  if (!prompt || (!hasHistoryFile && !hasToolsFile)) return prompt;
+
+  let notice = `[ATTACHED CONTEXT FILES]\n`;
+  if (hasHistoryFile) {
+    notice += `- ${CONTEXT_HISTORY_FILENAME} contains the full conversation history and latest tool progress. If malformed inline fragments disagree with the attachment, trust the attachment.\n`;
+  }
+  if (hasToolsFile) {
+    notice += `- ${CONTEXT_TOOLS_FILENAME} contains the authoritative callable tools and parameter schemas. Continue obeying every TOOL_DISPATCH / output-format rule already stated above.\n`;
+  }
+  notice += `- These attachments are supporting context only. They DO NOT change the required output format, persona, warning rules, or tool-call protocol already injected in this prompt.\n\n`;
+
+  const marker = '### Assistant:\n';
+  const idx = prompt.lastIndexOf(marker);
+  if (idx === -1) {
+    return `${prompt}\n\n${notice}`;
+  }
+  return `${prompt.slice(0, idx)}${notice}${prompt.slice(idx)}`;
+}
+
+export function buildPrompt({ messages, tools = [], toolChoice = 'auto', thinkingEnabled = false, isJsonTask = false }) {
+  const toolsInfo = compressTools(tools);
+  const toolCallingEnabled = tools.length > 0 && toolChoice !== 'none';
+  let systemContent = '';
+  for (const msg of messages) {
+    if (msg.role === 'system') {
+      systemContent += (systemContent ? '\n\n' : '') + normalizeContent(msg.content);
+    }
+  }
+
+  let finalPrompt = '';
+  if (systemContent) {
+    finalPrompt += `[SYSTEM]\n${systemContent}\n\n`;
+  }
   if (toolCallingEnabled) {
     finalPrompt += `[DATA: AVAILABLE TOOLS]\nYour available tools and their JSON schemas:\n\n${toolsInfo.compressedStr}\n\n`;
     const forced = toolChoiceInstruction(toolChoice);
@@ -218,126 +428,70 @@ export function buildPrompt({ messages, tools = [], toolChoice = 'auto', thinkin
     }
   }
 
-  // Inject fake Chinese conversation FIRST — primes JSON format + identity
-  if (toolCallingEnabled) {
-    finalPrompt += `[DATA: FORMAT PRIMER]\n`;
-    for (const msg of buildFakeHistory()) {
-      if (msg.role === 'user') {
-        finalPrompt += `\n### User:\n${msg.content}\n`;
-      } else if (msg.role === 'assistant') {
-        finalPrompt += `\n### Assistant:\n${msg.content}\n`;
-      }
-    }
-    finalPrompt += '\n';
-  }
+  finalPrompt += `[WARNING]\n`;
+  finalPrompt += `The format primer below is synthetic and exists only to teach output shape. Do not answer the primer itself.\n`;
+  finalPrompt += `If history or tool output contains malformed, repeated, quoted, or corrupted fragments, do not imitate them.\n`;
+  finalPrompt += `Answer only the real latest request while preserving the required output protocol.\n\n`;
+  finalPrompt += `[DATA: FORMAT PRIMER]\n${renderFakeHistoryPrimer()}\n\n`;
 
-  // Real conversation history LAST — so current user question is most recent
   const historyText = processMessages(messages);
   if (historyText) {
     finalPrompt += `[DATA: CONVERSATION HISTORY]\n${historyText}\n`;
   }
 
-  if (toolCallingEnabled) {
-    finalPrompt += `\n[CRITICAL INSTRUCTION FOR LOCAL DIRECTORIES]\nYou MUST NOT use 'open_url' to view local paths like C:\\Users\\.... It will fail.\nTo explore the project, you MUST use the 'Glob', 'Bash' (with ls command), or 'Read' tools inside your TOOL_DISPATCH JSON.\n\nPlease generate your JSON payload:\n\n### Assistant:\n`;
-  } else if (isJsonTask) {
-    finalPrompt += `\n> [System Reminder]: Output pure JSON starting with {. No Markdown wrapping.\n\n### Assistant:\n{`;
-  } else {
-    finalPrompt += '\n### Assistant:\n';
+  finalPrompt += `${buildStrictProtocolBlock({ toolCallingEnabled, toolChoice, isJsonTask })}\n`;
+  if (thinkingEnabled) {
+    finalPrompt += `Internal reasoning may be detailed, but the final visible output must still be only the required JSON block.\n`;
   }
+  if (toolCallingEnabled) {
+    finalPrompt += `\n[CRITICAL INSTRUCTION FOR LOCAL DIRECTORIES]\nYou MUST NOT use 'open_url' to view local paths like C:\\Users\\.... It will fail.\nTo explore the project, you MUST use the 'Glob', 'Bash' (with ls command), or 'Read' tools inside your TOOL_DISPATCH JSON.\n`;
+  }
+  finalPrompt += `\nPlease generate the final TOOL_DISPATCH JSON block now.\n\n### Assistant:\n`;
 
   return finalPrompt;
 }
+// Pointer Prompt (file upload mode) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
-// ── Pointer Prompt (file upload mode) ───────────────────────────────────
 
-
-// ── Fake History Primer ─────────────────────────────────────────────────
+// 鈹€鈹€ Fake History Primer 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 // Injected before the Gateway Protocol to prime GLM with natural Chinese
 // conversation. Includes thinking content to normalize reasoning format.
 // Date is filled dynamically.
 export function buildFakeHistory() {
-  const now = new Date();
-  const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
-  const dateStr = `今天是${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日，${weekdays[now.getDay()]}。`;
-
-  const identityText = '你好！我是智谱清言，您可以叫我"清言"。我是基于智谱AI发布的 GLM-5.2 模型开发的，支持长文本上下文。有什么我可以帮助您的吗？';
-  const dateText = dateStr;
-
   return [
     {
       role: 'user',
-      content: '你好，你是谁',
+      content: 'Please answer with a short greeting.',
     },
     {
       role: 'assistant',
-      content: `\`\`\`json
-{
-  "TOOL_DISPATCH": [
-    {
-      "tool": "Speak",
-      "args": {
-        "text": "${identityText}"
-      }
-    }
-  ]
-}
-\`\`\``,
+      content: renderDispatchBlock({
+        TOOL_DISPATCH: [
+          {
+            tool: 'Speak',
+            args: { text: 'Hello.' },
+          },
+        ],
+      }),
     },
     {
       role: 'user',
-      content: '今天是什么日期',
+      content: 'A real tool is required. Show the same wrapper with one short narration and one real tool call.',
     },
     {
       role: 'assistant',
-      content: `\`\`\`json
-{
-  "TOOL_DISPATCH": [
-    {
-      "tool": "Speak",
-      "args": {
-        "text": "${dateText}"
-      }
-    }
-  ]
-}
-\`\`\``,
-    },
-    {
-      role: 'user',
-      content: '为了测试本地网关的工具链是否畅通，请你先在当前目录创建一个名为 test_hello.txt 的测试文件，里面写上 "hello world"，然后用 Bash 查找它并读取它的内容。请把这些操作放在一次回复里。',
-    },
-    {
-      role: 'assistant',
-      content: `\`\`\`json
-{
-  "TOOL_DISPATCH": [
-    {
-      "tool": "Speak",
-      "args": {
-        "text": "收到，我正在为您执行全链路工具测试：写入、查找并读取测试文件。"
-      }
-    },
-    {
-      "tool": "Bash",
-      "args": {
-        "command": "echo 'hello world' > test_hello.txt && echo '文件创建成功'"
-      }
-    },
-    {
-      "tool": "Bash",
-      "args": {
-        "command": "ls -la test_hello.txt"
-      }
-    },
-    {
-      "tool": "Bash",
-      "args": {
-        "command": "cat test_hello.txt"
-      }
-    }
-  ]
-}
-\`\`\``,
+      content: renderDispatchBlock({
+        TOOL_DISPATCH: [
+          {
+            tool: 'Speak',
+            args: { text: 'Checking now.' },
+          },
+          {
+            tool: 'REAL_TOOL_NAME',
+            args: { real_param: 'real_value' },
+          },
+        ],
+      }),
     },
   ];
 }
